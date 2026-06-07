@@ -151,8 +151,9 @@ function buildMemoryText(memories, areaName) {
 
 /* ── Express 服务 ─────────────────────────────────────────── */
 async function startServer() {
+  const path = require('path');
   const dotenv = await import('dotenv');
-  dotenv.config({ path: '../.env' });
+  dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
   const corsModule = await import('cors');
   const cors = corsModule.default || corsModule;

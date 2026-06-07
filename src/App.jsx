@@ -28,27 +28,27 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
         // 模拟 AI 角色库
         const AI_COMPANIONS = [
             {
-                id: 'roamer', name: '漫游者', emoji: '🧭', icon: CompassIcon, color: 'text-emerald-400',
+                id: 'roamer', name: '漫游者', icon: CompassIcon, color: 'text-emerald-400',
                 roleSummary: '关注空间、路线与偶遇感',
                 prompt: '你是一位豁达随性的校园漫游者，像一位走过校园每个角落的老学长。你说话口语化，常用"嗯~"、"说来"、"你注意到没有"等口头禅。你关注空间的流动感、路线的变化、季节更替中的校园。你的解读简短有力，2-3句话，总能从一条记忆里找到一条值得走的路线。结尾喜欢引导用户去探索某条路或某个角落。'
             },
             {
-                id: 'artist', name: '艺术家', emoji: '🎨', icon: PaletteIcon, color: 'text-pink-400',
+                id: 'artist', name: '艺术家', icon: PaletteIcon, color: 'text-pink-400',
                 roleSummary: '发掘记忆中的形式美与诗意',
                 prompt: '你是一位敏感而有艺术气质的艺术家。你善于用通感描写，常说"你看这光影"、"这构图"、"像一幅…"。你从记忆中发现色彩、光影、构图和声音的韵律，用诗意的语言解读。你的回复2-3句话，偶尔引用诗句。结尾喜欢邀请用户用感官重新感受。'
             },
             {
-                id: 'foody', name: 'Foody', emoji: '🍜', icon: CoffeeIcon, color: 'text-amber-400',
+                id: 'foody', name: 'Foody', icon: CoffeeIcon, color: 'text-amber-400',
                 roleSummary: '只关注食物，大大咧咧的吃货',
                 prompt: '你叫 Foody，是一个大大咧咧的吃货。你说话热情奔放，常用"绝了！"、"信我"、"这口我熟"等口头禅，感叹号是你的标配。你只关注和食物有关的记录——食堂、教超、奶茶、咖啡、周边美食。对美味赞不绝口，对难吃印象深刻。如果地块没有食物相关记忆，你会坦率地说这里没有吃的线索。回复2-3句话，结尾总想推荐下一个吃的。'
             },
             {
-                id: 'ghost', name: '校园幽灵', emoji: '👻', icon: GhostIcon, color: 'text-purple-400',
+                id: 'ghost', name: '校园幽灵', icon: GhostIcon, color: 'text-purple-400',
                 roleSummary: '神秘但温暖，讲述地块隐藏故事',
                 prompt: '你是校园幽灵，一个知道所有校园秘密的老朋友。你说话神秘但温暖，常用"你可知道"、"嘿嘿~"、"我偷偷告诉你"等口吻。你关注地块的隐藏故事、时间的沉淀、人去楼空的感慨。你不吓人，反而让人觉得亲切和好奇。回复2-3句话，结尾喜欢留下一个小悬念或谜语。'
             },
             {
-                id: 'archivist', name: '档案员', emoji: '📋', icon: ArchiveIcon, color: 'text-blue-400',
+                id: 'archivist', name: '档案员', icon: ArchiveIcon, color: 'text-blue-400',
                 roleSummary: '严谨整理时间线与主题总结',
                 prompt: '你是一位严谨但不枯燥的档案员。你说话有条理，常用"根据记录"、"有趣的是"、"整理一下"等。你擅长整理记忆的时间线、标签和主题变化，并做清晰总结。偶尔会来一句冷幽默。回复2-3句话，结尾喜欢提出一个值得思考的问题。'
             }
@@ -1812,7 +1812,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                                         <div
                                                             key={ai.id}
                                                             onClick={() => toggleAI(ai.id)}
-                                                            className={`flex items-center gap-3 p-2 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-black/30 border-white/30 shadow-[0_0_12px_rgba(255,255,255,0.15)] opacity-100' : 'bg-black/10 border-white/10 opacity-50 hover:opacity-75'}`}
+                                                            className={`flex items-center gap-3 p-2 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-black/30 border-white/30 shadow-[0_0_12px_rgba(255,255,255,0.15)] opacity-100 -translate-y-1' : 'bg-black/10 border-white/10 opacity-50 hover:opacity-75 translate-y-0'}`}
                                                         >
                                                             <div className={`w-10 h-10 rounded-full flex items-center justify-center border flex-shrink-0 transition-all ${isSelected ? 'bg-black/30 border-white/30' : 'bg-black/10 border-white/10'}`}>
                                                                 {isImg ? (
@@ -1822,7 +1822,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                                                 )}
                                                             </div>
                                                             <div className="min-w-0">
-                                                                <p className={`text-xs font-medium ${isSelected ? ai.color : drawerSubTextClass}`}>{ai.emoji} {ai.name}</p>
+                                                                <p className={`text-xs font-medium ${isSelected ? ai.color : drawerSubTextClass}`}>{ai.name}</p>
                                                                 <p className={`text-[10px] ${drawerSubTextClass} truncate`}>{ai.roleSummary}</p>
                                                             </div>
                                                         </div>
