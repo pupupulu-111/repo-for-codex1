@@ -189,29 +189,35 @@ async function startServer() {
 
   // 批量角色解读
   app.post('/api/ai', async (req, res) => {
-    const { areaId, memories = [], selectedRoles = [] } = req.body;
-    const areaName = memories?.[0]?.areaName || areaId || '未知地块';
+    try {
+      const { areaId, memories = [], selectedRoles = [] } = req.body;
+      const areaName = memories?.[0]?.areaName || areaId || '未知地块';
 
-    if (!selectedRoles.length) return res.json({ responses: [] });
+      if (!selectedRoles.length) return res.json({ responses: [] });
 
-    const memoryText = buildMemoryText(memories, areaName);
-    const temperatureMap = { ghost: 0.85, artist: 0.8, foody: 0.75, roamer: 0.7, archivist: 0.5 };
+      const memoryText = buildMemoryText(memories, areaName);
+      const temperatureMap = { ghost: 0.85, artist: 0.8, foody: 0.75, roamer: 0.7, archivist: 0.5 };
 
-    const responses = await Promise.allSettled(
-      selectedRoles.map(async roleId => {
-        const systemPrompt = COMPANION_PROMPTS[roleId] || COMPANION_PROMPTS.roamer;
-        const userMessage = `请基于以下校园记忆数据，用你的角色风格进行解读：\n\n${memoryText}`;
-        const temp = temperatureMap[roleId] || 0.7;
-        const text = await callLLM(systemPrompt, userMessage, temp);
-        return { role: roleId, roleId, text, source: 'api' };
-      })
-    );
+      const responses = await Promise.allSettled(
+        selectedRoles.map(async roleId => {
+          const systemPrompt = COMPANION_PROMPTS[roleId] || COMPANION_PROMPTS.roamer;
+          const userMessage = `请基于以下校园记忆数据，用你的角色风格进行解读：\n\n${memoryText}`;
+          const temp = temperatureMap[roleId] || 0.7;
+          const text = await callLLM(systemPrompt, userMessage, temp);
+          return { role: roleId, roleId, text, source: 'api' };
+        })
+      );
 
-    const result = responses
-      .filter(r => r.status === 'fulfilled')
-      .map(r => r.value);
+      const result = responses
+        .filter(r => r.status === 'fulfilled')
+        .map(r => r.value);
 
-    res.json({ responses: result });
+      res.json({ responses: result });
+    } catch (error) {
+      console.error('/api/ai error:', error.message);
+      // 返回空结果，让前端降级到 Mock
+      res.json({ responses: [], error: error.message });
+    }
   });
 
   // 单角色对话
@@ -250,4 +256,4 @@ async function startServer() {
   app.listen(PORT, () => console.log(`🚀 Server running on http://localhost:${PORT}`));
 }
 
-startServer().catch(err => { console.error('Failed to start server:', err); process.exit(1); });
+startServer().catch(err => { console.error('Failed to start server:', err); });

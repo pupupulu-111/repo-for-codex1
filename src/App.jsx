@@ -273,33 +273,47 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
         };
 
         const requestAiInsights = async ({ areaId, memories, selectedRoles }) => {
-            const response = await fetch(`${AI_API_BASE_URL}/api/ai`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    areaId,
-                    memories: createMemoryPayload(memories),
-                    selectedRoles
-                })
-            });
-            if (!response.ok) throw new Error(`AI insight request failed: ${response.status}`);
-            return response.json();
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            try {
+                const response = await fetch(`${AI_API_BASE_URL}/api/ai`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        areaId,
+                        memories: createMemoryPayload(memories),
+                        selectedRoles
+                    }),
+                    signal: controller.signal
+                });
+                if (!response.ok) throw new Error(`AI insight request failed: ${response.status}`);
+                return response.json();
+            } finally {
+                clearTimeout(timeoutId);
+            }
         };
 
         const requestRoleChat = async ({ roleId, message, areaId, memories, history }) => {
-            const response = await fetch(`${AI_API_BASE_URL}/api/chat`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    roleId,
-                    message,
-                    areaId,
-                    memories: createMemoryPayload(memories),
-                    history
-                })
-            });
-            if (!response.ok) throw new Error(`AI chat request failed: ${response.status}`);
-            return response.json();
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            try {
+                const response = await fetch(`${AI_API_BASE_URL}/api/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        roleId,
+                        message,
+                        areaId,
+                        memories: createMemoryPayload(memories),
+                        history
+                    }),
+                    signal: controller.signal
+                });
+                if (!response.ok) throw new Error(`AI chat request failed: ${response.status}`);
+                return response.json();
+            } finally {
+                clearTimeout(timeoutId);
+            }
         };
 
         const mockGenerateChatReply = ({ roleId, message, area, memories = [], history = [] }) => {
@@ -1587,12 +1601,22 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         .then(data => {
                             if (cancelled) return;
                             const responses = Array.isArray(data?.responses) ? data.responses : [];
-                            setAiResponses(responses.map(item => ({
-                                role: item.role,
-                                roleId: item.roleId || item.role,
-                                text: item.text,
-                                source: 'api'
-                            })).filter(item => item.text));
+                            const filledResponses = responses
+                                .map(item => ({
+                                    role: item.role,
+                                    roleId: item.roleId || item.role,
+                                    text: item.text,
+                                    source: 'api'
+                                }))
+                                .filter(item => item.text);
+                            
+                            // If API returned empty/missing responses, fall back to Mock
+                            if (filledResponses.length === 0 && fallbackResponses.length > 0) {
+                                setAiResponses(fallbackResponses);
+                                setAiError('API 暂不可用，已使用本地智能解读。');
+                            } else {
+                                setAiResponses(filledResponses);
+                            }
                         })
                         .catch(() => {
                             if (cancelled) return;
