@@ -3,6 +3,7 @@ import('cors').then(m => m.default || m).then(cors => {});
 import('express').then(m => m.default || m).then(express => {});
 
 const http = require('http');
+const https = require('https');
 
 /* ── 角色系统 Prompt ─────────────────────────────────────── */
 const COMPANION_PROMPTS = {
@@ -77,8 +78,13 @@ const COMPANION_PROMPTS = {
 - 结尾提出一个值得思考的问题`
 };
 
-/* ── 调用 OpenAI 兼容 API ─────────────────────────────────── */
-async function callLLM(systemPrompt, userMessage, temperature = 0.7, maxTokens = 300) {
+/* ── 辅助：根据 URL 选择 http 或 https ─────────────────────── */
+function getHttpModule(url) {
+  return url.protocol === 'https:' ? https : http;
+}
+
+/* ── 通用 LLM API 调用（支持 HTTP/HTTPS） ────────────────── */
+async function llmRequest(messages, temperature = 0.7, maxTokens = 300) {
   const apiKey = process.env.OPENAI_API_KEY;
   const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
   const model = process.env.OPENAI_MODEL || 'gpt-4.1-mini';
@@ -89,19 +95,17 @@ async function callLLM(systemPrompt, userMessage, temperature = 0.7, maxTokens =
 
   const body = JSON.stringify({
     model,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userMessage }
-    ],
+    messages,
     temperature,
     max_tokens: maxTokens
   });
 
   return new Promise((resolve, reject) => {
     const url = new URL(`${baseUrl}/chat/completions`);
+    const httpMod = getHttpModule(url);
     const options = {
       hostname: url.hostname,
-      port: url.port || 443,
+      port: url.port || (url.protocol === 'https:' ? 443 : 80),
       path: url.pathname,
       method: 'POST',
       headers: {
@@ -111,11 +115,15 @@ async function callLLM(systemPrompt, userMessage, temperature = 0.7, maxTokens =
       }
     };
 
-    const req = http.request(options, (res) => {
+    const req = httpMod.request(options, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
         try {
+          if (res.statusCode === 402) {
+            reject(new Error('DeepSeek API 余额不足（Insufficient Balance），请充值后使用'));
+            return;
+          }
           if (res.statusCode !== 200) {
             reject(new Error(`API returned ${res.statusCode}: ${data.slice(0, 200)}`));
             return;
@@ -134,6 +142,14 @@ async function callLLM(systemPrompt, userMessage, temperature = 0.7, maxTokens =
     req.write(body);
     req.end();
   });
+}
+
+/* ── 调用 LLM（封装角色 Prompt） ──────────────────────────── */
+async function callLLM(systemPrompt, userMessage, temperature = 0.7, maxTokens = 300) {
+  return llmRequest([
+    { role: 'system', content: systemPrompt },
+    { role: 'user', content: userMessage }
+  ], temperature, maxTokens);
 }
 
 /* ── 构建记忆文本摘要 ─────────────────────────────────────── */
@@ -220,52 +236,14 @@ async function startServer() {
 
     messages.push({ role: 'user', content: message });
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    const baseUrl = (process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1').replace(/\/+$/, '');
-    const model = process.env.OPENAI_MODEL || 'gpt-4.1-mini';
     const temperatureMap = { ghost: 0.85, artist: 0.8, foody: 0.75, roamer: 0.7, archivist: 0.5 };
 
-    if (!apiKey || apiKey === 'replace-with-your-api-key') {
-      return res.status(503).json({ error: 'LLM API key not configured' });
+    try {
+      const reply = await llmRequest(messages, temperatureMap[roleId] || 0.7, 300);
+      res.json({ roleId, reply, createdAt: new Date().toISOString() });
+    } catch (error) {
+      res.status(502).json({ error: `LLM request failed: ${error.message}` });
     }
-
-    const body = JSON.stringify({ model, messages, temperature: temperatureMap[roleId] || 0.7, max_tokens: 300 });
-
-    const result = await new Promise((resolve, reject) => {
-      const url = new URL(`${baseUrl}/chat/completions`);
-      const options = {
-        hostname: url.hostname,
-        port: url.port || 443,
-        path: url.pathname,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Length': Buffer.byteLength(body)
-        }
-      };
-
-      const req = http.request(options, (resp) => {
-        let data = '';
-        resp.on('data', chunk => data += chunk);
-        resp.on('end', () => {
-          try {
-            if (resp.statusCode !== 200) {
-              reject(new Error(`API ${resp.statusCode}: ${data.slice(0, 200)}`));
-              return;
-            }
-            const json = JSON.parse(data);
-            resolve(json.choices?.[0]?.message?.content?.trim() || '');
-          } catch (e) { reject(e); }
-        });
-      });
-      req.on('error', reject);
-      req.setTimeout(30000, () => { req.destroy(); reject(new Error('Timeout')); });
-      req.write(body);
-      req.end();
-    });
-
-    res.json({ roleId, reply: result, createdAt: new Date().toISOString() });
   });
 
   const PORT = process.env.PORT || 3001;
