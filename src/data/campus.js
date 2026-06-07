@@ -1,6 +1,9 @@
 export const MAP_WIDTH = 1536;
 export const MAP_HEIGHT = 1024;
-export const NIGHT_OFFSET_Y = 8;
+// 夜间底图与日间底图尺寸/构图不同，overlay 需平移才能与夜图对齐（相对 1536×1024 坐标系）
+export const NIGHT_OFFSET_X = 4;
+export const NIGHT_OFFSET_Y = 35;
+export const NIGHT_SCALE = 1.05;     
 
 export const CAMPUS_AREAS = [
   { id: 'south-dorms', name: '南园宿舍区', polygon: [[957, 699], [1218, 700], [1246, 1002], [968, 1000], [968, 878], [1096, 878], [1096, 747], [963, 747]] },

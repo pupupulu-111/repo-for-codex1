@@ -1,7 +1,7 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import dayMapUrl from '../底图2.png';
 import nightMapUrl from '../底图-夜.png';
-import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTES, NIGHT_OFFSET_Y, PRESET_TAGS, UNKNOWN_AREA } from './data/campus.js';
+import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTES, NIGHT_OFFSET_X, NIGHT_OFFSET_Y, PRESET_TAGS, UNKNOWN_AREA } from './data/campus.js';
 
 // --- 图标组件 (内联 SVG) ---
         const IconSVG = ({ children, className = "w-5 h-5", ...props }) => (
@@ -27,11 +27,31 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
 
         // 模拟 AI 角色库
         const AI_COMPANIONS = [
-            { id: 'roamer', name: '漫游者', icon: CompassIcon, color: 'text-emerald-400' },
-            { id: 'artist', name: '艺术家', icon: PaletteIcon, color: 'text-pink-400' },
-            { id: 'foody', name: 'Foody', icon: CoffeeIcon, color: 'text-amber-400' },
-            { id: 'ghost', name: '校园幽灵', icon: GhostIcon, color: 'text-purple-400' },
-            { id: 'archivist', name: '档案员', icon: ArchiveIcon, color: 'text-blue-400' }
+            {
+                id: 'roamer', name: '漫游者', emoji: '🧭', icon: CompassIcon, color: 'text-emerald-400',
+                roleSummary: '关注空间、路线与偶遇感',
+                prompt: '你是一位豁达随性的校园漫游者，像一位走过校园每个角落的老学长。你说话口语化，常用"嗯~"、"说来"、"你注意到没有"等口头禅。你关注空间的流动感、路线的变化、季节更替中的校园。你的解读简短有力，2-3句话，总能从一条记忆里找到一条值得走的路线。结尾喜欢引导用户去探索某条路或某个角落。'
+            },
+            {
+                id: 'artist', name: '艺术家', emoji: '🎨', icon: PaletteIcon, color: 'text-pink-400',
+                roleSummary: '发掘记忆中的形式美与诗意',
+                prompt: '你是一位敏感而有艺术气质的艺术家。你善于用通感描写，常说"你看这光影"、"这构图"、"像一幅…"。你从记忆中发现色彩、光影、构图和声音的韵律，用诗意的语言解读。你的回复2-3句话，偶尔引用诗句。结尾喜欢邀请用户用感官重新感受。'
+            },
+            {
+                id: 'foody', name: 'Foody', emoji: '🍜', icon: CoffeeIcon, color: 'text-amber-400',
+                roleSummary: '只关注食物，大大咧咧的吃货',
+                prompt: '你叫 Foody，是一个大大咧咧的吃货。你说话热情奔放，常用"绝了！"、"信我"、"这口我熟"等口头禅，感叹号是你的标配。你只关注和食物有关的记录——食堂、教超、奶茶、咖啡、周边美食。对美味赞不绝口，对难吃印象深刻。如果地块没有食物相关记忆，你会坦率地说这里没有吃的线索。回复2-3句话，结尾总想推荐下一个吃的。'
+            },
+            {
+                id: 'ghost', name: '校园幽灵', emoji: '👻', icon: GhostIcon, color: 'text-purple-400',
+                roleSummary: '神秘但温暖，讲述地块隐藏故事',
+                prompt: '你是校园幽灵，一个知道所有校园秘密的老朋友。你说话神秘但温暖，常用"你可知道"、"嘿嘿~"、"我偷偷告诉你"等口吻。你关注地块的隐藏故事、时间的沉淀、人去楼空的感慨。你不吓人，反而让人觉得亲切和好奇。回复2-3句话，结尾喜欢留下一个小悬念或谜语。'
+            },
+            {
+                id: 'archivist', name: '档案员', emoji: '📋', icon: ArchiveIcon, color: 'text-blue-400',
+                roleSummary: '严谨整理时间线与主题总结',
+                prompt: '你是一位严谨但不枯燥的档案员。你说话有条理，常用"根据记录"、"有趣的是"、"整理一下"等。你擅长整理记忆的时间线、标签和主题变化，并做清晰总结。偶尔会来一句冷幽默。回复2-3句话，结尾喜欢提出一个值得思考的问题。'
+            }
         ];
 
         const getContentType = (text, image) => {
@@ -520,9 +540,10 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                 e.preventDefault();
                 // 修复：“播种”菜单因为之前没有绑定 ref 导致失效，现在已找回。
                 if (mapRef.current) {
-                    const currentOffset = theme === 'night' ? NIGHT_OFFSET_Y : 0;
-                    const rawX = (e.clientX - mapState.x) / mapState.scale;
-                    const rawY = (e.clientY - mapState.y) / mapState.scale - currentOffset;
+                    const offsetX = theme === 'night' ? NIGHT_OFFSET_X : 0;
+                    const offsetY = theme === 'night' ? NIGHT_OFFSET_Y : 0;
+                    const rawX = (e.clientX - mapState.x) / mapState.scale - offsetX;
+                    const rawY = (e.clientY - mapState.y) / mapState.scale - offsetY;
                     
                     setSelectedPoint({ x: rawX, y: rawY });
                     setContextMenu({ x: e.clientX, y: e.clientY, type: 'map' });
@@ -1446,6 +1467,13 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                 const [chatError, setChatError] = useState('');
                 const areaOptions = [...CAMPUS_AREAS, UNKNOWN_AREA];
                 const stopDrawerEvent = (e) => e.stopPropagation();
+                
+                // 自定义下拉框相关 state
+                const [isAreaDropdownOpen, setIsAreaDropdownOpen] = useState(false);
+                const [isChatRoleDropdownOpen, setIsChatRoleDropdownOpen] = useState(false);
+                const areaDropdownRef = useRef(null);
+                const chatRoleDropdownRef = useRef(null);
+                
                 const areaCounts = useMemo(() => {
                     return memories.reduce((counts, mem) => {
                         const key = mem.areaId || UNKNOWN_AREA.id;
@@ -1484,6 +1512,31 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         tags: tags.size
                     };
                 }, [scopedMemories]);
+
+                const drawerTextClass = 'text-white';
+                const drawerSubTextClass = 'text-white/70';
+                const chatRole = AI_COMPANIONS.find(ai => ai.id === chatRoleId) || AI_COMPANIONS[0];
+
+                // 点击外部关闭下拉框
+                useEffect(() => {
+                    const handleClickOutside = (event) => {
+                        if (areaDropdownRef.current && !areaDropdownRef.current.contains(event.target)) {
+                            setIsAreaDropdownOpen(false);
+                        }
+                        if (chatRoleDropdownRef.current && !chatRoleDropdownRef.current.contains(event.target)) {
+                            setIsChatRoleDropdownOpen(false);
+                        }
+                    };
+                    document.addEventListener('mousedown', handleClickOutside);
+                    return () => document.removeEventListener('mousedown', handleClickOutside);
+                }, []);
+
+                useEffect(() => {
+                    if (!drawerOpen) {
+                        setIsAreaDropdownOpen(false);
+                        setIsChatRoleDropdownOpen(false);
+                    }
+                }, [drawerOpen]);
 
                 useEffect(() => {
                     if (!drawerOpen) return;
@@ -1620,16 +1673,16 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                     return (
                         <article key={mem.id} className="rounded-2xl border border-white/10 bg-black/20 p-5 hover:bg-white/10 transition-colors shadow-[0_18px_50px_rgba(0,0,0,0.18)]">
                             <div className="flex items-start justify-between gap-3 mb-2">
-                                <h3 className={`font-medium ${textClass}`}>{mem.title || '未命名记忆'}</h3>
-                                <span className={`text-[10px] px-2 py-1 rounded-full bg-white/10 ${subTextClass}`}>{isFuture ? (isSprouted ? '已萌发' : '未来') : '记忆'}</span>
+                                <h3 className={`font-medium ${drawerTextClass}`}>{mem.title || '未命名记忆'}</h3>
+                                <span className={`text-[10px] px-2 py-1 rounded-full bg-white/10 ${drawerSubTextClass}`}>{isFuture ? (isSprouted ? '已萌发' : '未来') : '记忆'}</span>
                             </div>
-                            <div className={`text-xs mb-3 flex flex-wrap items-center gap-2 ${subTextClass}`}>
+                            <div className={`text-xs mb-3 flex flex-wrap items-center gap-2 ${drawerSubTextClass}`}>
                                 <span className="inline-flex items-center gap-1"><ClockIcon className="w-3 h-3" /> {formatSeedDate(getSeedDisplayDate(mem))}</span>
                                 <span className="inline-flex items-center gap-1"><CompassIcon className="w-3 h-3" /> {mem.areaName || UNKNOWN_AREA.name}</span>
                             </div>
                             {mem.tags && mem.tags.length > 0 && (
                                 <div className="flex flex-wrap gap-1 mb-3">
-                                    {mem.tags.map(t => <span key={t} className={`text-[10px] px-2 py-0.5 rounded border border-white/20 ${subTextClass}`}>{t}</span>)}
+                                    {mem.tags.map(t => <span key={t} className={`text-[10px] px-2 py-0.5 rounded border border-white/20 ${drawerSubTextClass}`}>{t}</span>)}
                                 </div>
                             )}
                             {mem.image && (!isFuture || isSprouted) && (
@@ -1638,225 +1691,323 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                 </div>
                             )}
                             {isFuture && !isSprouted ? (
-                                <p className={`text-sm ${subTextClass}`}>这颗未来种子尚未萌发，暂时隐藏正文。</p>
+                                <p className={`text-sm ${drawerSubTextClass}`}>这颗未来种子尚未萌发，暂时隐藏正文。</p>
                             ) : (
-                                <p className={`text-sm leading-relaxed ${textClass}`}>{mem.text || mem.content || '这条记忆只有图像或标签。'}</p>
+                                <p className={`text-sm leading-relaxed ${drawerTextClass}`}>{mem.text || mem.content || '这条记忆只有图像或标签。'}</p>
                             )}
                         </article>
                     );
                 };
 
                 return (
-                    <div
-                        className={`fixed inset-y-4 left-4 right-4 mx-auto w-auto max-w-[1180px] z-40 ${glassClass} border border-white/20 rounded-[28px] p-6 md:p-8 flex flex-col drawer-premium shadow-[0_30px_90px_rgba(0,0,0,0.45)] ${drawerOpen ? 'translate-x-0 pointer-events-auto' : 'translate-x-[120vw] pointer-events-none'}`}
-                        onClick={stopDrawerEvent}
-                        onWheel={stopDrawerEvent}
-                        onMouseDown={stopDrawerEvent}
-                        onMouseMove={stopDrawerEvent}
-                        onMouseUp={stopDrawerEvent}
-                        onPointerDown={stopDrawerEvent}
-                        onPointerMove={stopDrawerEvent}
-                        onPointerUp={stopDrawerEvent}
-                        onContextMenu={stopDrawerEvent}
-                    >
-                        <div className={`flex justify-between items-center mb-6 content-stagger ${drawerOpen ? 'opacity-100 translate-x-0 delay-100' : 'opacity-0 translate-x-12'}`}>
-                            <div>
-                                <h2 className={`text-2xl font-light ${textClass}`}>地块探索</h2>
-                                <p className={`text-xs mt-1 ${subTextClass}`}>{visibleAreaName} · {areaFocusLabel} · {scopedMemories.length} 条记录</p>
+                    <>
+                        <style>{`
+                            .dropdown-slide {
+                                animation: dropdownFadeIn 0.2s ease-out;
+                            }
+                            @keyframes dropdownFadeIn {
+                                from {
+                                    opacity: 0;
+                                    transform: translateY(-8px);
+                                }
+                                to {
+                                    opacity: 1;
+                                    transform: translateY(0);
+                                }
+                            }
+                        `}</style>
+                        <div
+                            className={`fixed inset-y-4 left-4 right-4 mx-auto w-auto max-w-[1180px] z-40 ${glassClass} border border-white/20 rounded-[28px] p-6 md:p-8 flex flex-col drawer-premium shadow-[0_30px_90px_rgba(0,0,0,0.45)] ${drawerOpen ? 'translate-x-0 pointer-events-auto' : 'translate-x-[120vw] pointer-events-none'}`}
+                            onClick={stopDrawerEvent}
+                            onWheel={stopDrawerEvent}
+                            onMouseDown={stopDrawerEvent}
+                            onMouseMove={stopDrawerEvent}
+                            onMouseUp={stopDrawerEvent}
+                            onPointerDown={stopDrawerEvent}
+                            onPointerMove={stopDrawerEvent}
+                            onPointerUp={stopDrawerEvent}
+                            onContextMenu={stopDrawerEvent}
+                        >
+                            <div className={`flex justify-between items-center mb-6 content-stagger ${drawerOpen ? 'opacity-100 translate-x-0 delay-100' : 'opacity-0 translate-x-12'}`}>
+                                <div>
+                                    <h2 className={`text-2xl font-light ${drawerTextClass}`}>地块探索</h2>
+                                    <p className={`text-xs mt-1 ${drawerSubTextClass}`}>{visibleAreaName} · {areaFocusLabel} · {scopedMemories.length} 条记录</p>
+                                </div>
+                                <button onClick={() => setDrawerOpen(false)} className={`p-2 rounded-full hover:bg-white/10 ${drawerTextClass} transition-colors cursor-pointer`} title="关闭探索">
+                                    <XIcon className="w-6 h-6" />
+                                </button>
                             </div>
-                            <button onClick={() => setDrawerOpen(false)} className={`p-2 rounded-full hover:bg-white/10 ${textClass} transition-colors cursor-pointer`} title="关闭探索">
-                                <XIcon className="w-6 h-6" />
-                            </button>
-                        </div>
 
-                        <div className={`grid grid-cols-1 lg:grid-cols-[260px_minmax(360px,1fr)_280px] gap-5 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden content-stagger ${drawerOpen ? 'opacity-100 translate-x-0 delay-200' : 'opacity-0 translate-x-12'}`}>
-                            <aside className="lg:min-h-0 lg:overflow-y-auto rounded-2xl border border-white/10 bg-black/10 p-4">
-                                <div className="grid grid-cols-2 gap-2 mb-4">
-                                    <button onClick={() => setViewScope('global')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${viewScope === 'global' ? 'bg-white/20 border-white/40 ' + textClass : 'bg-black/10 border-white/10 ' + subTextClass}`}>全局</button>
-                                    <button onClick={() => setViewScope('area')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${viewScope === 'area' ? 'bg-white/20 border-white/40 ' + textClass : 'bg-black/10 border-white/10 ' + subTextClass}`}>局部</button>
-                                </div>
-                                <select
-                                    value={selectedAreaId}
-                                    onChange={e => setSelectedAreaId(e.target.value)}
-                                    className={`w-full bg-black/20 border border-white/15 rounded-2xl px-4 py-3 outline-none focus:border-white/40 cursor-pointer ${textClass}`}
-                                    style={{ colorScheme: theme === 'night' ? 'dark' : 'light' }}
-                                >
-                                    {areaOptions.map(area => (
-                                        <option key={area.id} value={area.id}>
-                                            {area.name} ({areaCounts[area.id] || 0})
-                                        </option>
-                                    ))}
-                                </select>
-
-                                <div className="grid grid-cols-2 gap-2 my-4">
-                                    <button onClick={() => setExploreMode('private')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${exploreMode === 'private' ? 'bg-white/20 border-white/40 ' + textClass : 'bg-black/10 border-white/10 ' + subTextClass}`}>秘密探索</button>
-                                    <button onClick={() => setExploreMode('companion')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${exploreMode === 'companion' ? 'bg-white/20 border-white/40 ' + textClass : 'bg-black/10 border-white/10 ' + subTextClass}`}>结伴探索</button>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2 mb-4">
-                                    <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
-                                        <p className={`text-[10px] ${subTextClass}`}>记录</p>
-                                        <p className={`text-xl font-light ${textClass}`}>{stats.total}</p>
+                            <div className={`grid grid-cols-1 lg:grid-cols-[260px_minmax(360px,1fr)_280px] gap-5 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden content-stagger ${drawerOpen ? 'opacity-100 translate-x-0 delay-200' : 'opacity-0 translate-x-12'}`}>
+                                <aside className="lg:min-h-0 lg:overflow-y-auto rounded-2xl border border-white/10 bg-black/10 p-4">
+                                    <div className="grid grid-cols-2 gap-2 mb-4">
+                                        <button onClick={() => setViewScope('global')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${viewScope === 'global' ? 'bg-white/20 border-white/40 ' + drawerTextClass : 'bg-black/10 border-white/10 ' + drawerSubTextClass}`}>全局</button>
+                                        <button onClick={() => setViewScope('area')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${viewScope === 'area' ? 'bg-white/20 border-white/40 ' + drawerTextClass : 'bg-black/10 border-white/10 ' + drawerSubTextClass}`}>局部</button>
                                     </div>
-                                    <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
-                                        <p className={`text-[10px] ${subTextClass}`}>未来</p>
-                                        <p className={`text-xl font-light ${textClass}`}>{stats.future}</p>
+                                    
+                                    {/* 自定义下拉选择器 - 区域选择 */}
+                                    <div className="relative" ref={areaDropdownRef}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsAreaDropdownOpen(!isAreaDropdownOpen)}
+                                            className={`w-full bg-black/30 backdrop-blur-sm border border-white/20 rounded-2xl px-4 py-3 pr-4 outline-none cursor-pointer flex items-center justify-between ${drawerTextClass} focus:ring-2 focus:ring-white/50 transition-all`}
+                                            style={{
+                                                boxShadow: isAreaDropdownOpen ? '0 0 0 2px rgba(255,255,255,0.3), 0 0 0 4px rgba(255,255,255,0.1)' : '0 0 0 1px rgba(255,255,255,0.05)'
+                                            }}
+                                        >
+                                            <span>{selectedArea.name} ({areaCounts[selectedArea.id] || 0})</span>
+                                            <svg xmlns="http://www.w3.org/2000/svg" className={`w-5 h-5 transition-transform ${isAreaDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.8)">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                            </svg>
+                                        </button>
+                                        
+                                        {isAreaDropdownOpen && (
+                                            <div className="absolute left-0 right-0 mt-2 z-50 bg-[rgba(90,90,82,0.85)] border border-[rgba(169,169,159,0.5)] rounded-xl shadow-[0_0_8px_rgba(169,169,159,0.25)] backdrop-blur-sm overflow-hidden dropdown-slide">
+                                                {/* 移除滚动条，所有选项一次显示 */}
+                                                <div>
+                                                    {areaOptions.map(area => (
+                                                        <button
+                                                            key={area.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setSelectedAreaId(area.id);
+                                                                setIsAreaDropdownOpen(false);
+                                                            }}
+                                                            className={`w-full px-4 py-3 text-left hover:bg-white/20 transition-colors flex items-center justify-between ${selectedAreaId === area.id ? 'bg-white/30 text-white' : drawerTextClass}`}
+                                                        >
+                                                            <span>{area.name}</span>
+                                                            <span className="text-xs text-white/60">{areaCounts[area.id] || 0} 条</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
 
-                                {exploreMode === 'companion' && (
-                                    <div>
-                                        <p className={`text-sm mb-3 ${subTextClass}`}>结伴探索 (最多选 3 位)</p>
-                                        <div className="grid grid-cols-3 gap-3">
-                                            {AI_COMPANIONS.map(ai => {
-                                                const isSelected = selectedAIs.includes(ai.id);
-                                                const Icon = ai.icon;
-                                                const isImg = typeof ai.icon === 'string';
-                                                return (
-                                                    <div
-                                                        key={ai.id}
-                                                        onClick={() => toggleAI(ai.id)}
-                                                        className={`flex flex-col items-center gap-2 cursor-pointer transition-all ${isSelected ? 'opacity-100 -translate-y-1' : 'opacity-40 hover:opacity-70'}`}
-                                                    >
-                                                        <div className={`w-12 h-12 rounded-full flex items-center justify-center border transition-all ${isSelected ? 'bg-black/30 border-white/40 shadow-[0_0_15px_rgba(255,255,255,0.2)]' : 'bg-black/10 border-white/10'}`}>
-                                                            {isImg ? (
-                                                                <img src={ai.icon} alt={ai.name} className={`w-12 h-12 object-contain transition-all ${!isSelected ? 'grayscale opacity-60 scale-90' : 'scale-110'}`} />
-                                                            ) : (
-                                                                <Icon className={`w-6 h-6 ${isSelected ? ai.color : 'text-slate-400'}`} />
-                                                            )}
+                                    <div className="grid grid-cols-2 gap-2 my-4">
+                                        <button onClick={() => setExploreMode('private')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${exploreMode === 'private' ? 'bg-white/20 border-white/40 ' + drawerTextClass : 'bg-black/10 border-white/10 ' + drawerSubTextClass}`}>秘密探索</button>
+                                        <button onClick={() => setExploreMode('companion')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${exploreMode === 'companion' ? 'bg-white/20 border-white/40 ' + drawerTextClass : 'bg-black/10 border-white/10 ' + drawerSubTextClass}`}>结伴探索</button>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 mb-4">
+                                        <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
+                                            <p className={`text-[10px] ${drawerSubTextClass}`}>记录</p>
+                                            <p className={`text-xl font-light ${drawerTextClass}`}>{stats.total}</p>
+                                        </div>
+                                        <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
+                                            <p className={`text-[10px] ${drawerSubTextClass}`}>未来</p>
+                                            <p className={`text-xl font-light ${drawerTextClass}`}>{stats.future}</p>
+                                        </div>
+                                    </div>
+
+                                    {exploreMode === 'companion' && (
+                                        <div>
+                                            <p className={`text-sm mb-3 ${drawerSubTextClass}`}>结伴探索 (最多选 3 位)</p>
+                                            <div className="grid grid-cols-1 gap-2">
+                                                {AI_COMPANIONS.map(ai => {
+                                                    const isSelected = selectedAIs.includes(ai.id);
+                                                    const Icon = ai.icon;
+                                                    const isImg = typeof ai.icon === 'string';
+                                                    return (
+                                                        <div
+                                                            key={ai.id}
+                                                            onClick={() => toggleAI(ai.id)}
+                                                            className={`flex items-center gap-3 p-2 rounded-xl border cursor-pointer transition-all ${isSelected ? 'bg-black/30 border-white/30 shadow-[0_0_12px_rgba(255,255,255,0.15)] opacity-100' : 'bg-black/10 border-white/10 opacity-50 hover:opacity-75'}`}
+                                                        >
+                                                            <div className={`w-10 h-10 rounded-full flex items-center justify-center border flex-shrink-0 transition-all ${isSelected ? 'bg-black/30 border-white/30' : 'bg-black/10 border-white/10'}`}>
+                                                                {isImg ? (
+                                                                    <img src={ai.icon} alt={ai.name} className={`w-10 h-10 object-contain transition-all ${!isSelected ? 'grayscale opacity-60' : ''}`} />
+                                                                ) : (
+                                                                    <Icon className={`w-5 h-5 ${isSelected ? ai.color : 'text-slate-400'}`} />
+                                                                )}
+                                                            </div>
+                                                            <div className="min-w-0">
+                                                                <p className={`text-xs font-medium ${isSelected ? ai.color : drawerSubTextClass}`}>{ai.emoji} {ai.name}</p>
+                                                                <p className={`text-[10px] ${drawerSubTextClass} truncate`}>{ai.roleSummary}</p>
+                                                            </div>
                                                         </div>
-                                                        <span className={`text-[11px] ${textClass}`}>{ai.name}</span>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-                            </aside>
-
-                            <main className="min-h-[360px] lg:min-h-0 overflow-hidden rounded-2xl border border-white/10 bg-black/10 p-4 md:p-5 flex flex-col">
-                                <div className="mb-4 flex items-center justify-between gap-3">
-                                    <div>
-                                        <p className={`text-xs ${subTextClass}`}>记忆记录</p>
-                                        <h3 className={`text-lg font-light ${textClass}`}>{visibleAreaName}</h3>
-                                        {viewScope === 'global' && <p className={`text-xs mt-1 ${subTextClass}`}>{areaFocusLabel}</p>}
-                                    </div>
-                                    <span className={`rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs ${subTextClass}`}>{viewScope === 'global' ? '全局' : '局部'}</span>
-                                </div>
-                                <div className="flex-1 min-h-0 overflow-y-auto pr-2">
-                                    {scopedMemories.length === 0 ? (
-                                        <div className={`h-full min-h-[260px] rounded-2xl border border-dashed border-white/15 bg-white/5 p-8 text-center flex items-center justify-center ${subTextClass}`}>
-                                            这个范围还没有记忆。
-                                        </div>
-                                    ) : (
-                                        <div className="mx-auto grid w-full max-w-2xl grid-cols-1 gap-4">
-                                            {scopedMemories.map(renderMemoryCard)}
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     )}
-                                </div>
-                            </main>
+                                </aside>
 
-                            <aside className="lg:min-h-0 lg:overflow-y-auto rounded-2xl border border-white/10 bg-black/10 p-4">
-                                <p className={`text-xs mb-3 ${subTextClass}`}>开启与TA们的对话吧！</p>
-                                {exploreMode === 'private' ? (
-                                    <div className={`rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-relaxed ${textClass}`}>
-                                        秘密探索已开启。当前只展示你的记忆记录，不生成结伴解读。
-                                    </div>
-                                ) : viewScope !== 'global' ? (
-                                    <div className={`rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-relaxed ${subTextClass}`}>
-                                        局部查看专注记录本身，AI 解读只在全局概览中显示。
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-                                            <div className="flex items-center justify-between gap-3 mb-3">
-                                                <p className={`text-xs ${subTextClass}`}>地块解读</p>
-                                                {aiLoading && <span className={`text-[10px] ${subTextClass}`}>Typing...</span>}
-                                            </div>
-                                            {aiError && <p className="mb-3 text-[11px] text-amber-200">{aiError}</p>}
-                                            {areaMemoriesForAi.length === 0 ? (
-                                                <div className={`text-sm leading-relaxed ${subTextClass}`}>
-                                                    {selectedArea.name} 暂无真实记录，期待你种下这里的第一颗种子。
-                                                </div>
-                                            ) : selectedAIs.length === 0 ? (
-                                                <div className={`text-sm ${subTextClass}`}>
-                                                    选择至少一位探索伙伴后，会基于当前关注地块的真实记录生成解读。
-                                                </div>
-                                            ) : aiLoading && aiResponses.length === 0 ? (
-                                                <div className={`text-sm ${subTextClass}`}>TA们正在读取这片地块...</div>
-                                            ) : (
-                                                <div className="space-y-3">
-                                                    {aiResponses.map(response => {
-                                                        const ai = AI_COMPANIONS.find(item => item.id === response.roleId || item.name === response.role) || AI_COMPANIONS[0];
-                                                        return (
-                                                            <div key={`${response.roleId}-${response.role}`} className="flex gap-3">
-                                                                <AIAvatar id={ai.id} className="bg-black/20 border border-white/10 flex-shrink-0" iconClass={`w-5 h-5 ${ai.color}`} />
-                                                                <div className={`bg-black/20 border border-white/5 rounded-2xl rounded-tl-sm p-4 text-sm leading-relaxed ${textClass}`}>
-                                                                    <p className={`text-xs mb-2 ${ai.color}`}>{ai.name}{response.source === 'mock' ? ' · Mock' : ''}</p>
-                                                                    {response.text}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                            )}
+                                <main className="min-h-[360px] lg:min-h-0 overflow-hidden rounded-2xl border border-white/10 bg-black/10 p-4 md:p-5 flex flex-col">
+                                    <div className="mb-4 flex items-center justify-between gap-3">
+                                        <div>
+                                            <p className={`text-xs ${drawerSubTextClass}`}>记忆记录</p>
+                                            <h3 className={`text-lg font-light ${drawerTextClass}`}>{visibleAreaName}</h3>
+                                            {viewScope === 'global' && <p className={`text-xs mt-1 ${drawerSubTextClass}`}>{areaFocusLabel}</p>}
                                         </div>
+                                        <span className={`rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs ${drawerSubTextClass}`}>{viewScope === 'global' ? '全局' : '局部'}</span>
+                                    </div>
+                                    <div className="flex-1 min-h-0 overflow-y-auto pr-2">
+                                        {scopedMemories.length === 0 ? (
+                                            <div className={`h-full min-h-[260px] rounded-2xl border border-dashed border-white/15 bg-white/5 p-8 text-center flex items-center justify-center ${drawerSubTextClass}`}>
+                                                这个范围还没有记忆。
+                                            </div>
+                                        ) : (
+                                            <div className="mx-auto grid w-full max-w-2xl grid-cols-1 gap-4">
+                                                {scopedMemories.map(renderMemoryCard)}
+                                            </div>
+                                        )}
+                                    </div>
+                                </main>
 
-                                        <div className="rounded-2xl border border-white/10 bg-black/15 p-3">
-                                            <p className={`text-xs mb-3 ${subTextClass}`}>指定角色对话</p>
-                                            <div className="max-h-44 overflow-y-auto space-y-2 pr-1 mb-3">
-                                                {activeAreaChatMessages.length === 0 ? (
-                                                    <div className={`rounded-xl border border-dashed border-white/10 bg-white/5 p-3 text-xs leading-relaxed ${subTextClass}`}>
-                                                        选择一个角色，问 TA 一个关于这片地块的问题。
+                                <aside className="lg:min-h-0 lg:overflow-y-auto rounded-2xl border border-white/10 bg-black/10 p-4">
+                                    <p className={`text-xs mb-3 ${drawerSubTextClass}`}>开启与TA们的对话吧！</p>
+                                    {exploreMode === 'private' ? (
+                                        <div className={`rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-relaxed ${drawerTextClass}`}>
+                                            秘密探索已开启。当前只展示你的记忆记录，不生成结伴解读。
+                                        </div>
+                                    ) : viewScope !== 'global' ? (
+                                        <div className={`rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-relaxed ${drawerSubTextClass}`}>
+                                            局部查看专注记录本身，AI 解读只在全局概览中显示。
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
+                                                <div className="flex items-center justify-between gap-3 mb-3">
+                                                    <p className={`text-xs ${drawerSubTextClass}`}>地块解读</p>
+                                                    {aiLoading && <span className={`text-[10px] ${drawerSubTextClass}`}>Typing...</span>}
+                                                </div>
+                                                {aiError && <p className="mb-3 text-[11px] text-amber-200">{aiError}</p>}
+                                                {areaMemoriesForAi.length === 0 ? (
+                                                    <div className={`text-sm leading-relaxed ${drawerSubTextClass}`}>
+                                                        {selectedArea.name} 暂无真实记录，期待你种下这里的第一颗种子。
                                                     </div>
+                                                ) : selectedAIs.length === 0 ? (
+                                                    <div className={`text-sm ${drawerSubTextClass}`}>
+                                                        选择至少一位探索伙伴后，会基于当前关注地块的真实记录生成解读。
+                                                    </div>
+                                                ) : aiLoading && aiResponses.length === 0 ? (
+                                                    <div className={`text-sm ${drawerSubTextClass}`}>TA们正在读取这片地块...</div>
                                                 ) : (
-                                                    activeAreaChatMessages.map(message => {
-                                                        const ai = AI_COMPANIONS.find(item => item.id === message.roleId) || AI_COMPANIONS[0];
-                                                        const isUser = message.sender === 'user';
-                                                        return (
-                                                            <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                                                                <div className={`max-w-[86%] rounded-2xl px-3 py-2 text-xs leading-relaxed border ${isUser ? 'bg-white/20 border-white/20 ' + textClass : 'bg-black/25 border-white/10 ' + textClass}`}>
-                                                                    {!isUser && <p className={`mb-1 ${ai.color}`}>{ai.name}</p>}
-                                                                    {message.text}
+                                                    <div className="space-y-3">
+                                                        {aiResponses.map(response => {
+                                                            const ai = AI_COMPANIONS.find(item => item.id === response.roleId || item.name === response.role) || AI_COMPANIONS[0];
+                                                            return (
+                                                                <div key={`${response.roleId}-${response.role}`} className="flex gap-3">
+                                                                    <AIAvatar id={ai.id} className="bg-black/20 border border-white/10 flex-shrink-0" iconClass={`w-5 h-5 ${ai.color}`} />
+                                                                    <div className={`bg-black/20 border border-white/5 rounded-2xl rounded-tl-sm p-4 text-sm leading-relaxed ${drawerTextClass}`}>
+                                                                        <p className={`text-xs mb-2 ${ai.color}`}>{ai.name}{response.source === 'mock' ? ' · Mock' : ''}</p>
+                                                                        {response.text}
+                                                                    </div>
                                                                 </div>
-                                                            </div>
-                                                        );
-                                                    })
+                                                            );
+                                                        })}
+                                                    </div>
                                                 )}
-                                                {chatLoading && <div className={`text-xs ${subTextClass}`}>正在等待回复...</div>}
                                             </div>
-                                            {chatError && <p className="mb-2 text-[11px] text-amber-200">{chatError}</p>}
-                                            <form onSubmit={sendChatMessage} className="space-y-2">
-                                                <select
-                                                    value={chatRoleId}
-                                                    onChange={e => setChatRoleId(e.target.value)}
-                                                    className={`w-full bg-black/20 border border-white/15 rounded-xl px-3 py-2 text-xs outline-none focus:border-white/40 cursor-pointer ${textClass}`}
-                                                    style={{ colorScheme: theme === 'night' ? 'dark' : 'light' }}
-                                                >
-                                                    {AI_COMPANIONS.map(ai => <option key={ai.id} value={ai.id}>{ai.name}</option>)}
-                                                </select>
-                                                <div className="flex gap-2">
-                                                    <input
-                                                        value={chatInput}
-                                                        onChange={e => setChatInput(e.target.value)}
-                                                        placeholder="输入想对 TA 说的话"
-                                                        className={`min-w-0 flex-1 bg-black/20 border border-white/15 rounded-xl px-3 py-2 text-xs outline-none focus:border-white/40 ${textClass}`}
-                                                    />
-                                                    <button
-                                                        type="submit"
-                                                        disabled={!chatInput.trim() || chatLoading}
-                                                        className={`px-3 py-2 rounded-xl border border-white/15 text-xs transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${textClass} hover:bg-white/10`}
-                                                    >
-                                                        发送
-                                                    </button>
+
+                                            <div className="rounded-2xl border border-white/10 bg-black/15 p-3">
+                                                <p className={`text-xs mb-3 ${drawerSubTextClass}`}>指定角色对话</p>
+                                                <div className="max-h-44 overflow-y-auto space-y-2 pr-1 mb-3">
+                                                    {activeAreaChatMessages.length === 0 ? (
+                                                        <div className={`rounded-xl border border-dashed border-white/10 bg-white/5 p-3 text-xs leading-relaxed ${drawerSubTextClass}`}>
+                                                            选择一个角色，问 TA 一个关于这片地块的问题。
+                                                        </div>
+                                                    ) : (
+                                                        activeAreaChatMessages.map(message => {
+                                                            const ai = AI_COMPANIONS.find(item => item.id === message.roleId) || AI_COMPANIONS[0];
+                                                            const isUser = message.sender === 'user';
+                                                            return (
+                                                                <div key={message.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
+                                                                    <div className={`max-w-[86%] rounded-2xl px-3 py-2 text-xs leading-relaxed border ${isUser ? 'bg-white/20 border-white/20 ' + drawerTextClass : 'bg-black/25 border-white/10 ' + drawerTextClass}`}>
+                                                                        {!isUser && <p className={`mb-1 ${ai.color}`}>{ai.name}</p>}
+                                                                        {message.text}
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })
+                                                    )}
+                                                    {chatLoading && <div className={`text-xs ${drawerSubTextClass}`}>正在等待回复...</div>}
                                                 </div>
-                                            </form>
+                                                {chatError && <p className="mb-2 text-[11px] text-amber-200">{chatError}</p>}
+                                                <form onSubmit={sendChatMessage} className="space-y-2">
+                                                    <div className="relative" ref={chatRoleDropdownRef}>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setIsChatRoleDropdownOpen(open => !open)}
+                                                            className={`w-full bg-black/30 backdrop-blur-sm border border-white/20 rounded-2xl px-3 py-2.5 outline-none cursor-pointer flex items-center justify-between gap-2 ${drawerTextClass} focus:ring-2 focus:ring-white/50 transition-all text-xs`}
+                                                            style={{
+                                                                boxShadow: isChatRoleDropdownOpen
+                                                                    ? '0 0 0 2px rgba(255,255,255,0.3), 0 0 0 4px rgba(255,255,255,0.1)'
+                                                                    : '0 0 0 1px rgba(255,255,255,0.05)'
+                                                            }}
+                                                        >
+                                                            <span className="flex items-center gap-2 min-w-0">
+                                                                {typeof chatRole.icon === 'string' ? (
+                                                                    <img src={chatRole.icon} alt={chatRole.name} className="w-7 h-7 object-contain flex-shrink-0" />
+                                                                ) : (() => {
+                                                                    const ChatRoleIcon = chatRole.icon;
+                                                                    return (
+                                                                        <span className="w-7 h-7 rounded-full flex items-center justify-center bg-black/25 border border-white/15 flex-shrink-0">
+                                                                            <ChatRoleIcon className={`w-3.5 h-3.5 ${chatRole.color}`} />
+                                                                        </span>
+                                                                    );
+                                                                })()}
+                                                                <span className="truncate">与 {chatRole.name} 对话</span>
+                                                            </span>
+                                                            <svg xmlns="http://www.w3.org/2000/svg" className={`w-4 h-4 flex-shrink-0 transition-transform ${isChatRoleDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="rgba(255,255,255,0.8)">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </button>
+
+                                                        {isChatRoleDropdownOpen && (
+                                                            <div className="absolute left-0 right-0 bottom-full mb-2 z-50 bg-[rgba(90,90,82,0.85)] border border-[rgba(169,169,159,0.5)] rounded-xl shadow-[0_0_8px_rgba(169,169,159,0.25)] backdrop-blur-sm overflow-hidden dropdown-slide">
+                                                                {AI_COMPANIONS.map(ai => {
+                                                                    const Icon = ai.icon;
+                                                                    const isImg = typeof ai.icon === 'string';
+                                                                    const isSelected = chatRoleId === ai.id;
+                                                                    return (
+                                                                        <button
+                                                                            key={ai.id}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                setChatRoleId(ai.id);
+                                                                                setIsChatRoleDropdownOpen(false);
+                                                                            }}
+                                                                            className={`w-full px-3 py-2.5 text-left hover:bg-white/20 transition-colors flex items-center gap-3 ${isSelected ? 'bg-white/30 text-white' : drawerTextClass}`}
+                                                                        >
+                                                                            {isImg ? (
+                                                                                <img src={ai.icon} alt={ai.name} className="w-7 h-7 object-contain flex-shrink-0" />
+                                                                            ) : (
+                                                                                <span className={`w-7 h-7 rounded-full flex items-center justify-center border flex-shrink-0 ${isSelected ? 'bg-black/30 border-white/30' : 'bg-black/20 border-white/10'}`}>
+                                                                                    <Icon className={`w-3.5 h-3.5 ${ai.color}`} />
+                                                                                </span>
+                                                                            )}
+                                                                            <span className="text-xs">{ai.name}</span>
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            value={chatInput}
+                                                            onChange={e => setChatInput(e.target.value)}
+                                                            placeholder="输入想对 TA 说的话"
+                                                            className={`min-w-0 flex-1 bg-black/20 border border-white/15 rounded-xl px-3 py-2 text-xs outline-none focus:border-white/40 ${drawerTextClass}`}
+                                                        />
+                                                        <button
+                                                            type="submit"
+                                                            disabled={!chatInput.trim() || chatLoading}
+                                                            className={`px-3 py-2 rounded-xl border border-white/15 text-xs transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${drawerTextClass} hover:bg-white/10`}
+                                                        >
+                                                            发送
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </aside>
+                                    )}
+                                </aside>
+                            </div>
                         </div>
-                    </div>
+                    </>
                 );
             };
 
@@ -1899,7 +2050,9 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         <div 
                             className="absolute inset-0 w-full h-full"
                             style={{ 
-                                transform: `translateY(${theme === 'night' ? NIGHT_OFFSET_Y : 0}px)`, 
+                                transform: theme === 'night'
+                                    ? `translate(${NIGHT_OFFSET_X}px, ${NIGHT_OFFSET_Y}px)`
+                                    : 'none', 
                                 transition: 'transform 0.8s ease',
                                 pointerEvents: 'none' 
                             }}
