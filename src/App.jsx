@@ -236,7 +236,8 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
         };
 
         const AI_CHAT_STORAGE_KEY = 'campus-ai-chats';
-        const AI_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:3001';
+        const AI_API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+        const AI_REQUEST_TIMEOUT_MS = 60000;
         const SCHEDULE_STORAGE_KEY = 'campus-schedules';
         const REMINDER_ACK_STORAGE_KEY = 'campus-reminder-acks';
 
@@ -260,42 +261,61 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
             }
         };
 
-        const createMemoryPayload = (memories = []) => {
+        const createMemoryPayload = (memories = [], areaName = '') => {
             return memories.map(mem => {
                 const isHiddenFuture = (mem.seedType || mem.type) === 'future' && !isFutureSeedSprouted(mem);
                 return {
                     id: mem.id,
                     title: mem.title || '',
                     content: isHiddenFuture ? '' : (mem.text || mem.content || ''),
-                    tags: Array.isArray(mem.tags) ? mem.tags : []
+                    tags: Array.isArray(mem.tags) ? mem.tags : [],
+                    areaName: mem.areaName || areaName,
+                    memoryDate: getSeedDisplayDate(mem) || mem.createdAt || ''
                 };
             });
         };
 
-        const requestAiInsights = async ({ areaId, memories, selectedRoles }) => {
+        const formatApiError = (error, fallback = '请求失败，请确认后端已启动（npm run server）') => {
+            if (error?.name === 'AbortError') return '请求超时，请稍后重试';
+            const message = String(error?.message || '').trim();
+            if (!message) return fallback;
+            if (message.includes('Failed to fetch') || message.includes('NetworkError')) {
+                return '无法连接后端，请先运行 npm run server';
+            }
+            return message;
+        };
+
+        const requestAiInsights = async ({ areaId, memories, selectedRoles, areaName }) => {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            const timeoutId = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
             try {
                 const response = await fetch(`${AI_API_BASE_URL}/api/ai`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         areaId,
-                        memories: createMemoryPayload(memories),
+                        areaName,
+                        memories: createMemoryPayload(memories, areaName),
                         selectedRoles
                     }),
                     signal: controller.signal
                 });
-                if (!response.ok) throw new Error(`AI insight request failed: ${response.status}`);
-                return response.json();
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data?.error || `地块解读请求失败（${response.status}）`);
+                }
+                if (data?.error) {
+                    throw new Error(data.error);
+                }
+                return data;
             } finally {
                 clearTimeout(timeoutId);
             }
         };
 
-        const requestRoleChat = async ({ roleId, message, areaId, memories, history }) => {
+        const requestRoleChat = async ({ roleId, message, areaId, memories, history, areaName }) => {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 8000);
+            const timeoutId = setTimeout(() => controller.abort(), AI_REQUEST_TIMEOUT_MS);
             try {
                 const response = await fetch(`${AI_API_BASE_URL}/api/chat`, {
                     method: 'POST',
@@ -304,13 +324,20 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         roleId,
                         message,
                         areaId,
-                        memories: createMemoryPayload(memories),
+                        areaName,
+                        memories: createMemoryPayload(memories, areaName),
                         history
                     }),
                     signal: controller.signal
                 });
-                if (!response.ok) throw new Error(`AI chat request failed: ${response.status}`);
-                return response.json();
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data?.error || `对话请求失败（${response.status}）`);
+                }
+                if (!data?.reply) {
+                    throw new Error(data?.error || '角色未返回有效回复');
+                }
+                return data;
             } finally {
                 clearTimeout(timeoutId);
             }
@@ -1563,7 +1590,6 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                     else if (selectedAIs.length < 3) setSelectedAIs([...selectedAIs, id]);
                 };
 
-                const getAiInsight = (ai) => mockGenerateInsight(ai.id, selectedArea, areaMemoriesForAi);
                 const activeAreaChatMessages = useMemo(() => {
                     return chatMessages
                         .filter(message => message.areaId === selectedAreaId)
@@ -1583,18 +1609,13 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                     }
 
                     let cancelled = false;
-                    const fallbackResponses = selectedAIs
-                        .map(roleId => {
-                            const ai = AI_COMPANIONS.find(item => item.id === roleId);
-                            const text = ai ? getAiInsight(ai) : null;
-                            return ai && text ? { role: ai.name, roleId: ai.id, text, source: 'mock' } : null;
-                        })
-                        .filter(Boolean);
 
                     setAiLoading(true);
                     setAiError('');
+                    setAiResponses([]);
                     requestAiInsights({
                         areaId: selectedAreaId,
+                        areaName: selectedArea.name,
                         memories: areaMemoriesForAi,
                         selectedRoles: selectedAIs
                     })
@@ -1609,19 +1630,18 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                     source: 'api'
                                 }))
                                 .filter(item => item.text);
-                            
-                            // If API returned empty/missing responses, fall back to Mock
-                            if (filledResponses.length === 0 && fallbackResponses.length > 0) {
-                                setAiResponses(fallbackResponses);
-                                setAiError('API 暂不可用，已使用本地智能解读。');
-                            } else {
-                                setAiResponses(filledResponses);
+
+                            if (filledResponses.length === 0) {
+                                setAiResponses([]);
+                                setAiError('未能生成地块解读，请稍后重试');
+                                return;
                             }
+                            setAiResponses(filledResponses);
                         })
-                        .catch(() => {
+                        .catch((error) => {
                             if (cancelled) return;
-                            setAiResponses(fallbackResponses);
-                            setAiError('后端暂不可用，已使用本地 Mock。');
+                            setAiResponses([]);
+                            setAiError(formatApiError(error));
                         })
                         .finally(() => {
                             if (!cancelled) setAiLoading(false);
@@ -1659,6 +1679,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                             roleId: chatRoleId,
                             message: text,
                             areaId: selectedAreaId,
+                            areaName: selectedArea.name,
                             memories: areaMemoriesForAi,
                             history: roleHistory
                         });
@@ -1671,21 +1692,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         });
                         setChatMessages(current => [...current, aiMessage]);
                     } catch (error) {
-                        const fallbackText = mockGenerateChatReply({
-                            roleId: chatRoleId,
-                            message: text,
-                            area: selectedArea,
-                            memories: areaMemoriesForAi,
-                            history: roleHistory
-                        });
-                        const aiMessage = normalizeChatMessage({
-                            areaId: selectedAreaId,
-                            roleId: chatRoleId,
-                            sender: 'ai',
-                            text: fallbackText
-                        });
-                        setChatMessages(current => [...current, aiMessage]);
-                        setChatError('后端暂不可用，已使用本地 Mock 回复。');
+                        setChatError(formatApiError(error));
                     } finally {
                         setChatLoading(false);
                     }
@@ -1915,7 +1922,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                                                 <div key={`${response.roleId}-${response.role}`} className="flex gap-3">
                                                                     <AIAvatar id={ai.id} className="bg-black/20 border border-white/10 flex-shrink-0" iconClass={`w-5 h-5 ${ai.color}`} />
                                                                     <div className={`bg-black/20 border border-white/5 rounded-2xl rounded-tl-sm p-4 text-sm leading-relaxed ${drawerTextClass}`}>
-                                                                        <p className={`text-xs mb-2 ${ai.color}`}>{ai.name}{response.source === 'mock' ? ' · Mock' : ''}</p>
+                                                                        <p className={`text-xs mb-2 ${ai.color}`}>{ai.name}</p>
                                                                         {response.text}
                                                                     </div>
                                                                 </div>
