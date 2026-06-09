@@ -25,6 +25,27 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
         const ImageIcon = (p) => <IconSVG {...p}><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></IconSVG>;
         const BookIcon = (p) => <IconSVG {...p}><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></IconSVG>;
 
+        const ReminderWhale = ({ alert = false }) => (
+            <div className={`reminder-whale ${alert ? 'reminder-whale-alert' : ''}`} aria-hidden="true">
+                <span className="reminder-whale-bubble bubble-one"></span>
+                <span className="reminder-whale-bubble bubble-two"></span>
+                <div className="reminder-whale-wrapper">
+                    <div className="reminder-whale-tail">
+                        <span className="reminder-whale-tail-top"></span>
+                        <span className="reminder-whale-tail-bottom"></span>
+                    </div>
+                    <div className="reminder-whale-body">
+                        <span className="reminder-whale-belly"></span>
+                        <span className="reminder-whale-eye"></span>
+                        <span className="reminder-whale-fin"></span>
+                        <span className="reminder-whale-crease crease-one"></span>
+                        <span className="reminder-whale-crease crease-two"></span>
+                        <span className="reminder-whale-crease crease-three"></span>
+                    </div>
+                </div>
+            </div>
+        );
+
         // 模拟 AI 角色库
         const AI_COMPANIONS = [
             {
@@ -240,6 +261,8 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
         const AI_REQUEST_TIMEOUT_MS = 60000;
         const SCHEDULE_STORAGE_KEY = 'campus-schedules';
         const REMINDER_ACK_STORAGE_KEY = 'campus-reminder-acks';
+        const REMINDER_WHALE_POSITION_STORAGE_KEY = 'campus-reminder-whale-position';
+        const REMINDER_WHALE_SIZE = { width: 104, height: 82 };
 
         const normalizeChatMessage = (message = {}) => ({
             id: message.id || `${Date.now()}-${Math.random().toString(36).slice(2)}`,
@@ -410,6 +433,29 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
             }
         };
 
+        const clampReminderWhalePosition = (position = {}) => {
+            const margin = 16;
+            const maxX = Math.max(margin, window.innerWidth - REMINDER_WHALE_SIZE.width - margin);
+            const maxY = Math.max(margin, window.innerHeight - REMINDER_WHALE_SIZE.height - margin);
+            return {
+                x: Math.max(margin, Math.min(maxX, Number(position.x) || maxX)),
+                y: Math.max(margin, Math.min(maxY, Number(position.y) || maxY))
+            };
+        };
+
+        const loadReminderWhalePosition = () => {
+            try {
+                const saved = localStorage.getItem(REMINDER_WHALE_POSITION_STORAGE_KEY);
+                if (saved) return clampReminderWhalePosition(JSON.parse(saved));
+            } catch (error) {
+                console.warn('campus-reminder-whale-position load failed:', error);
+            }
+            return clampReminderWhalePosition({
+                x: window.innerWidth - REMINDER_WHALE_SIZE.width - 24,
+                y: window.innerHeight - REMINDER_WHALE_SIZE.height - 24
+            });
+        };
+
         const getMinutesFromTime = (time = '') => {
             const [hour, minute] = String(time).split(':').map(Number);
             if (!Number.isFinite(hour) || !Number.isFinite(minute)) return null;
@@ -484,6 +530,16 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
             const [acknowledgedReminders, setAcknowledgedReminders] = useState(loadAcknowledgedReminders);
             const [reminderPanelOpen, setReminderPanelOpen] = useState(false);
             const [reminderContextMenu, setReminderContextMenu] = useState(null);
+            const [reminderWhalePosition, setReminderWhalePosition] = useState(loadReminderWhalePosition);
+            const reminderWhaleDrag = useRef({
+                active: false,
+                moved: false,
+                suppressClick: false,
+                startX: 0,
+                startY: 0,
+                originX: 0,
+                originY: 0
+            });
 
             const glassClass = theme === 'night' ? 'glass-panel-night' : 'glass-panel-day';
             const textClass = theme === 'night' ? 'text-white' : 'text-slate-800';
@@ -525,6 +581,10 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                 localStorage.setItem(SCHEDULE_STORAGE_KEY, JSON.stringify(schedules));
             }, [schedules]);
 
+            useEffect(() => {
+                localStorage.setItem(REMINDER_WHALE_POSITION_STORAGE_KEY, JSON.stringify(reminderWhalePosition));
+            }, [reminderWhalePosition]);
+
             const acknowledgeReminder = (id) => {
                 setAcknowledgedReminders(prev => prev.includes(id) ? prev : [...prev, id]);
                 setReminderContextMenu(null);
@@ -539,7 +599,10 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
 
             // 窗口缩放时重新对齐边界
             useEffect(() => {
-                const handleResize = () => setMapState(prev => clampMapState(prev));
+                const handleResize = () => {
+                    setMapState(prev => clampMapState(prev));
+                    setReminderWhalePosition(prev => clampReminderWhalePosition(prev));
+                };
                 window.addEventListener('resize', handleResize);
                 return () => window.removeEventListener('resize', handleResize);
             }, []);
@@ -576,6 +639,62 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
             };
 
             const handleMouseUp = () => setIsDragging(false);
+
+            const handleReminderWhalePointerDown = (e) => {
+                if (e.button !== 0) return;
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.setPointerCapture?.(e.pointerId);
+                reminderWhaleDrag.current = {
+                    active: true,
+                    moved: false,
+                    suppressClick: false,
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    originX: reminderWhalePosition.x,
+                    originY: reminderWhalePosition.y
+                };
+                setReminderContextMenu(null);
+            };
+
+            const handleReminderWhalePointerMove = (e) => {
+                if (!reminderWhaleDrag.current.active) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const dx = e.clientX - reminderWhaleDrag.current.startX;
+                const dy = e.clientY - reminderWhaleDrag.current.startY;
+                if (Math.hypot(dx, dy) > 4) reminderWhaleDrag.current.moved = true;
+                setReminderWhalePosition(clampReminderWhalePosition({
+                    x: reminderWhaleDrag.current.originX + dx,
+                    y: reminderWhaleDrag.current.originY + dy
+                }));
+            };
+
+            const handleReminderWhalePointerUp = (e) => {
+                if (!reminderWhaleDrag.current.active) return;
+                e.preventDefault();
+                e.stopPropagation();
+                e.currentTarget.releasePointerCapture?.(e.pointerId);
+                const wasDragged = reminderWhaleDrag.current.moved;
+                reminderWhaleDrag.current.active = false;
+                reminderWhaleDrag.current.suppressClick = true;
+                if (!wasDragged) setReminderPanelOpen(p => !p);
+            };
+
+            const handleReminderWhalePointerCancel = (e) => {
+                e.stopPropagation();
+                reminderWhaleDrag.current.active = false;
+                reminderWhaleDrag.current.suppressClick = true;
+            };
+
+            const handleReminderWhaleClick = (e) => {
+                if (reminderWhaleDrag.current.suppressClick) {
+                    reminderWhaleDrag.current.suppressClick = false;
+                    e.preventDefault();
+                    return;
+                }
+                setReminderPanelOpen(p => !p);
+            };
 
             const handleContextMenu = (e) => {
                 e.preventDefault();
@@ -2132,9 +2251,12 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         </button>
                     </div>
 
-                    <div className="absolute bottom-6 right-6 z-30 flex items-end gap-4 pointer-events-auto">
+                    <div
+                        className="absolute z-30 pointer-events-auto reminder-whale-dock"
+                        style={{ left: reminderWhalePosition.x, top: reminderWhalePosition.y }}
+                    >
                         {reminderPanelOpen && (
-                            <div className={`w-[300px] max-h-[260px] overflow-y-auto px-4 py-3 ${glassClass} rounded-2xl rounded-br-sm text-sm ${textClass} transition-all`}>
+                            <div className={`absolute right-0 ${reminderWhalePosition.y < 300 ? 'top-full mt-3' : 'bottom-full mb-3'} w-[300px] max-h-[260px] overflow-y-auto px-4 py-3 ${glassClass} rounded-2xl rounded-br-sm text-sm ${textClass} transition-all`}>
                                 <div className="flex items-center justify-between gap-3 mb-3">
                                     <p className="font-medium">提醒</p>
                                     {petAlert && <button onClick={acknowledgeAllReminders} className="text-xs opacity-60 hover:opacity-100">我知道了</button>}
@@ -2158,14 +2280,14 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                 )}
                             </div>
                         )}
-                        <div 
-                            className={`w-12 h-12 flex items-center justify-center ${glassClass} cursor-pointer hover:scale-110 transition-transform`} 
-                            style={{ 
-                                clipPath: 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)',
-                                animation: 'float 4s ease-in-out infinite',
-                                boxShadow: petAlert ? '0 0 20px #FF70A6, inset 0 0 10px #FF70A6' : ''
-                            }}
-                            onClick={() => setReminderPanelOpen(p => !p)}
+                        <button
+                            type="button"
+                            className="reminder-whale-button cursor-grab active:cursor-grabbing hover:scale-105 transition-transform"
+                            onPointerDown={handleReminderWhalePointerDown}
+                            onPointerMove={handleReminderWhalePointerMove}
+                            onPointerUp={handleReminderWhalePointerUp}
+                            onPointerCancel={handleReminderWhalePointerCancel}
+                            onClick={handleReminderWhaleClick}
                             onContextMenu={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -2173,8 +2295,8 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                             }}
                             title={petAlert ? `${activeReminderEvents.length} 条提醒` : '暂无提醒'}
                         >
-                            <div className={`w-3 h-3 rounded-full ${petAlert ? 'bg-pink-400 shadow-[0_0_10px_#FF70A6]' : (theme==='night' ? 'bg-blue-400' : 'bg-amber-200')}`} style={{ animation: 'breathe 2s infinite' }}></div>
-                        </div>
+                            <ReminderWhale alert={petAlert} />
+                        </button>
                     </div>
 
                     {reminderContextMenu && (

@@ -72,6 +72,232 @@
             border-radius: 9999px;
             transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
+
+        .reminder-whale-button {
+            position: relative;
+            width: 104px;
+            height: 82px;
+            padding: 0;
+            border: 0;
+            background: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transform-origin: center;
+        }
+
+        .reminder-whale-dock {
+            width: 104px;
+            height: 82px;
+            touch-action: none;
+            user-select: none;
+        }
+
+        .reminder-whale-button:focus-visible {
+            outline: 2px solid rgba(255, 255, 255, 0.72);
+            outline-offset: 4px;
+            border-radius: 28px;
+        }
+
+        .reminder-whale {
+            position: relative;
+            width: 96px;
+            height: 70px;
+            pointer-events: none;
+        }
+
+        .reminder-whale-wrapper {
+            position: absolute;
+            left: 5px;
+            top: 10px;
+            width: 86px;
+            height: 55px;
+            animation: reminder-whale-float 4s ease-in-out infinite;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.85))
+                    drop-shadow(0 0 18px rgba(126, 210, 255, 0.38));
+        }
+
+        .reminder-whale-alert .reminder-whale-wrapper {
+            filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.95))
+                    drop-shadow(0 0 22px rgba(255, 112, 166, 0.58));
+        }
+
+        .reminder-whale-body {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 78px;
+            height: 52px;
+            overflow: hidden;
+            border-radius: 45% 55% 45% 40% / 55% 55% 45% 40%;
+            background: #cdbff8;
+            box-shadow: inset 4px 4px 10px rgba(255, 255, 255, 0.8),
+                        inset -3px -3px 8px rgba(118, 147, 216, 0.36);
+            z-index: 2;
+        }
+
+        .reminder-whale-belly {
+            position: absolute;
+            right: 3px;
+            bottom: -8px;
+            width: 60px;
+            height: 42px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 50% 60%,
+                rgba(255, 150, 200, 0.9) 0%,
+                rgba(255, 255, 150, 0.78) 30%,
+                rgba(100, 250, 250, 0.68) 60%,
+                transparent 80%);
+            filter: blur(5px);
+            animation: reminder-whale-breathe 4s ease-in-out infinite;
+        }
+
+        .reminder-whale-eye {
+            position: absolute;
+            left: 18px;
+            top: 24px;
+            width: 8px;
+            height: 8px;
+            border: 1.5px solid rgba(255, 255, 255, 0.95);
+            border-radius: 50%;
+            background: #1a1a1a;
+            z-index: 5;
+            animation: reminder-whale-blink 5s infinite;
+        }
+
+        .reminder-whale-fin {
+            position: absolute;
+            left: 33px;
+            bottom: 8px;
+            width: 17px;
+            height: 9px;
+            border-radius: 50% 50% 30% 50%;
+            background: #cdbff8;
+            transform-origin: top left;
+            transform: rotate(20deg);
+            box-shadow: inset 2px 2px 5px rgba(255, 255, 255, 0.9);
+            z-index: 10;
+            animation: reminder-whale-flap 3s ease-in-out infinite;
+        }
+
+        .reminder-whale-tail {
+            position: absolute;
+            right: -7px;
+            top: 17px;
+            width: 20px;
+            height: 24px;
+            z-index: 1;
+            transform-origin: 10% 50%;
+            animation: reminder-whale-wag 4s ease-in-out infinite;
+        }
+
+        .reminder-whale-tail-top,
+        .reminder-whale-tail-bottom {
+            position: absolute;
+            left: 0;
+            width: 18px;
+            height: 9px;
+            border-radius: 50%;
+            background: #cdbff8;
+            box-shadow: inset 1px 1px 4px rgba(255, 255, 255, 0.82);
+        }
+
+        .reminder-whale-tail-top {
+            top: 1px;
+            transform: rotate(-35deg);
+        }
+
+        .reminder-whale-tail-bottom {
+            bottom: 1px;
+            transform: rotate(35deg);
+        }
+
+        .reminder-whale-crease {
+            position: absolute;
+            z-index: 4;
+            border: 1px solid transparent;
+            border-bottom: 1.5px solid rgba(255, 255, 255, 0.76);
+            border-radius: 50%;
+        }
+
+        .reminder-whale-crease.crease-one {
+            width: 15px;
+            height: 9px;
+            left: 5px;
+            bottom: 8px;
+            transform: rotate(15deg);
+        }
+
+        .reminder-whale-crease.crease-two {
+            width: 20px;
+            height: 12px;
+            left: 12px;
+            bottom: 5px;
+            transform: rotate(10deg);
+        }
+
+        .reminder-whale-crease.crease-three {
+            width: 23px;
+            height: 14px;
+            left: 22px;
+            bottom: 2px;
+            transform: rotate(5deg);
+        }
+
+        .reminder-whale-bubble {
+            position: absolute;
+            bottom: 7px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.22);
+            box-shadow: inset 0 0 5px rgba(255, 255, 255, 0.5);
+            animation: reminder-whale-rise 4.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+        }
+
+        .reminder-whale-bubble.bubble-one {
+            left: 8px;
+            width: 8px;
+            height: 8px;
+        }
+
+        .reminder-whale-bubble.bubble-two {
+            left: 20px;
+            width: 5px;
+            height: 5px;
+            animation-delay: 1.6s;
+            animation-duration: 5.4s;
+        }
+
+        @keyframes reminder-whale-float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-7px) rotate(2deg); }
+        }
+
+        @keyframes reminder-whale-wag {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(10deg); }
+        }
+
+        @keyframes reminder-whale-flap {
+            0%, 100% { transform: rotate(15deg); }
+            50% { transform: rotate(35deg); }
+        }
+
+        @keyframes reminder-whale-blink {
+            0%, 94%, 100% { transform: scaleY(1); }
+            97% { transform: scaleY(0.1); }
+        }
+
+        @keyframes reminder-whale-breathe {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50% { opacity: 1; transform: scale(1.05); }
+        }
+
+        @keyframes reminder-whale-rise {
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            20% { opacity: 1; }
+            80% { opacity: 1; }
+            100% { transform: translateY(-56px) scale(1.1); opacity: 0; }
+        }
         
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
