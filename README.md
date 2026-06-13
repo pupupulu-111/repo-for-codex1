@@ -1,8 +1,11 @@
 # 校园记忆播种地图
 
-本项目是一个本地运行的校园记忆探索地图。前端使用 Vite + React，后端使用 Node.js + Express 提供本地 AI mock API。
+本项目是一个本地运行的校园记忆探索地图，以南京大学鼓楼校区为核心地图，将学生与在特定校园地点的记忆按时间序列存储入档，通过大模型的定制化解读，播种与发掘记忆的意义。
+前端使用 Vite + React，后端使用 Node.js + Express 提供本地 AI mock API。
 
 ## 本地启动
+
+须先下载Node.js
 
 首次使用先安装依赖：
 
@@ -37,7 +40,7 @@ npm.cmd run dev
 http://127.0.0.1:3001
 ```
 
-如果需要修改 API 地址，复制 `.env.example` 为 `.env`，然后修改：
+如果需要修改 API 地址，复制 `.env.example` 为 `.env`，然后根据本地端口修改：
 
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:3001
@@ -54,11 +57,10 @@ PORT=3001
 
 ```env
 OPENAI_API_KEY=replace-with-your-api-key
-OPENAI_BASE_URL=https://api.openai.com/v1
-OPENAI_MODEL=gpt-4.1-mini
+OPENAI_BASE_URL=api地址
+OPENAI_MODEL=选择的模型
 ```
 
-真实 API 接入需要后续单独实现，API Key 应只放在后端读取，不能写进前端代码。
 
 ## 常用命令
 
