@@ -61,9 +61,9 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                 prompt: '你是一位敏感而有艺术气质的艺术家。你善于用通感描写，常说"你看这光影"、"这构图"、"像一幅…"。你从记忆中发现色彩、光影、构图和声音的韵律，用诗意的语言解读。你的回复2-3句话，偶尔引用诗句。结尾喜欢邀请用户用感官重新感受。'
             },
             {
-                id: 'foody', name: 'Foody', icon: CoffeeIcon, color: 'text-amber-400',
+                id: 'foodie', name: 'Foodie', icon: CoffeeIcon, color: 'text-amber-400',
                 roleSummary: '只关注食物，大大咧咧的吃货',
-                prompt: '你叫 Foody，是一个大大咧咧的吃货。你说话热情奔放，常用"绝了！"、"信我"、"这口我熟"等口头禅，感叹号是你的标配。你只关注和食物有关的记录——食堂、教超、奶茶、咖啡、周边美食。对美味赞不绝口，对难吃印象深刻。如果地块没有食物相关记忆，你会坦率地说这里没有吃的线索。回复2-3句话，结尾总想推荐下一个吃的。'
+                prompt: '你叫 Foodie，是一个大大咧咧的吃货。你说话热情奔放，常用"绝了！"、"信我"、"这口我熟"等口头禅，感叹号是你的标配。你只关注和食物有关的记录——食堂、教超、奶茶、咖啡、周边美食。对美味赞不绝口，对难吃印象深刻。如果地块没有食物相关记忆，你会坦率地说这里没有吃的线索。回复2-3句话，结尾总想推荐下一个吃的。'
             },
             {
                 id: 'ghost', name: '校园幽灵', icon: GhostIcon, color: 'text-purple-400',
@@ -210,7 +210,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
             const sproutedFutureCount = sortedMemories.filter(mem => (mem.seedType || mem.type) === 'future' && isFutureSeedSprouted(mem)).length;
             const imageCount = sortedMemories.filter(mem => mem.image).length;
             const dates = sortedMemories.map(getSeedDisplayDate).filter(Boolean).sort();
-            const foodKeywords = ['吃', '食', '饭', '餐', '咖啡', '奶茶', '面', '甜', '食堂', '教超', 'foody', 'food'];
+            const foodKeywords = ['吃', '食', '饭', '餐', '咖啡', '奶茶', '面', '甜', '食堂', '教超', 'foodie', 'food'];
             const foodMemories = sortedMemories.filter(mem => {
                 const isHiddenFuture = (mem.seedType || mem.type) === 'future' && !isFutureSeedSprouted(mem);
                 const publicText = isHiddenFuture ? '' : (mem.text || mem.content || '');
@@ -249,10 +249,10 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                 archivist: `档案记录：${areaName} 共 ${summary.count} 条，标签为「${tagText}」，未来种子 ${summary.futureCount} 颗，其中已萌发 ${summary.sproutedFutureCount} 颗。时间范围：${dateText}。主题线索来自 ${titleText}。`
             };
 
-            if (roleId === 'foody') {
-                if (!summary.foodMemories.length) return `Foody 暂停解读：${areaName} 目前没有食物、食堂、咖啡或餐饮相关的真实记录。`;
+            if (roleId === 'foodie') {
+                if (!summary.foodMemories.length) return `Foodie 暂停解读：${areaName} 目前没有食物、食堂、咖啡或餐饮相关的真实记录。`;
                 const foodTitles = summary.foodMemories.map(mem => mem.title).filter(Boolean).slice(0, 3);
-                return `${areaName} 有 ${summary.foodMemories.length} 条食物相关线索。Foody 只看这些：${foodTitles.length ? `「${foodTitles.join('」「')}」` : '未命名食物记录'}，不会把非食物记忆硬说成美食。`;
+                return `${areaName} 有 ${summary.foodMemories.length} 条食物相关线索。Foodie 只看这些：${foodTitles.length ? `「${foodTitles.join('」「')}」` : '未命名食物记录'}，不会把非食物记忆硬说成美食。`;
             }
 
             return insightByRole[roleId] || `我会基于 ${areaName} 的 ${summary.count} 条真实记录进行解读：${titleText}。`;
@@ -383,9 +383,9 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                     return `漫游者：你问“${cleanMessage}”。${context}。我会先帮你找一条可以慢慢走近记忆的路线。${historyHint}`;
                 case 'artist':
                     return `艺术家：你说“${cleanMessage}”。${context}。我会把它看作形状、光线和情绪的组合，不替它添加不存在的情节。${historyHint}`;
-                case 'foody':
-                    if (!summary.foodMemories.length) return `Foody：你问“${cleanMessage}”。这里暂时没有食物相关记录，我可以陪你聊，但不会硬把它解读成美食。${historyHint}`;
-                    return `Foody：你问“${cleanMessage}”。${context}。我会优先留意食堂、咖啡、饭点和味道这些真实线索。${historyHint}`;
+                case 'foodie':
+                    if (!summary.foodMemories.length) return `Foodie：你问“${cleanMessage}”。这里暂时没有食物相关记录，我可以陪你聊，但不会硬把它解读成美食。${historyHint}`;
+                    return `Foodie：你问“${cleanMessage}”。${context}。我会优先留意食堂、咖啡、饭点和味道这些真实线索。${historyHint}`;
                 case 'ghost':
                     return `校园幽灵：你问“${cleanMessage}”。${context}。我会轻一点回答，像从旧走廊里传来的回声，但不吓人。${historyHint}`;
                 case 'archivist':
@@ -1602,11 +1602,11 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                             </div>
                                         </div>
                                     )}
-                                    {selectedAIs.includes('foody') && (
+                                    {selectedAIs.includes('foodie') && (
                                         <div className="flex gap-4 animate-[float_3s_ease-in-out_infinite]">
-                                            <AIAvatar id="foody" className="bg-amber-500/20 border border-amber-400/30" iconClass="w-5 h-5 text-amber-300" />
+                                            <AIAvatar id="foodie" className="bg-amber-500/20 border border-amber-400/30" iconClass="w-5 h-5 text-amber-300" />
                                             <div className={`bg-black/20 border border-white/5 rounded-2xl rounded-tl-sm p-4 text-sm leading-relaxed ${textClass}`}>
-                                                <p className="text-amber-300 text-xs mb-2">Foody</p>
+                                                <p className="text-amber-300 text-xs mb-2">Foodie</p>
                                                 在这些记忆周围，似乎总是飘荡着刚出炉的美食香气，让人忍不住想去附近探索一番。
                                             </div>
                                         </div>
@@ -1641,6 +1641,10 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                 const [chatInput, setChatInput] = useState('');
                 const [chatLoading, setChatLoading] = useState(false);
                 const [chatError, setChatError] = useState('');
+                
+                // 新增：对话列表滚动容器 ref
+                const chatMessagesContainerRef = useRef(null);
+                
                 const areaOptions = [...CAMPUS_AREAS, UNKNOWN_AREA];
                 const stopDrawerEvent = (e) => e.stopPropagation();
                 
@@ -1657,6 +1661,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         return counts;
                     }, {});
                 }, [memories]);
+                
                 const selectedArea = areaOptions.find(area => area.id === selectedAreaId) || UNKNOWN_AREA;
                 const areaMemoriesForAi = useMemo(() => {
                     return memories
@@ -1667,6 +1672,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                             return timeB - timeA;
                         });
                 }, [memories, selectedAreaId]);
+                
                 const scopedMemories = useMemo(() => {
                     const list = viewScope === 'global'
                         ? memories
@@ -1677,6 +1683,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         return timeB - timeA;
                     });
                 }, [memories, selectedAreaId, viewScope]);
+                
                 const visibleAreaName = viewScope === 'global' ? '全局探索' : selectedArea.name;
                 const areaFocusLabel = viewScope === 'global' ? `关注：${selectedArea.name}` : selectedArea.name;
                 const stats = useMemo(() => {
@@ -1688,14 +1695,15 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         tags: tags.size
                     };
                 }, [scopedMemories]);
+                
                 const currentIndex = scopedMemories.length ? activeMemoryIndex % scopedMemories.length : 0;
                 const activeMemory = scopedMemories[currentIndex];
                 const stackedMemories = scopedMemories.filter((_, index) => index !== currentIndex).slice(0, 5);
-
+                
                 const drawerTextClass = 'text-white';
                 const drawerSubTextClass = 'text-white/70';
                 const chatRole = AI_COMPANIONS.find(ai => ai.id === chatRoleId) || AI_COMPANIONS[0];
-
+                
                 // 点击外部关闭下拉框
                 useEffect(() => {
                     const handleClickOutside = (event) => {
@@ -1709,39 +1717,39 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                     document.addEventListener('mousedown', handleClickOutside);
                     return () => document.removeEventListener('mousedown', handleClickOutside);
                 }, []);
-
+                
                 useEffect(() => {
                     if (!drawerOpen) {
                         setIsAreaDropdownOpen(false);
                         setIsChatRoleDropdownOpen(false);
                     }
                 }, [drawerOpen]);
-
+                
                 useEffect(() => {
                     if (!drawerOpen) return;
                     const firstAreaWithMemory = areaOptions.find(area => areaCounts[area.id] > 0) || areaOptions[0] || UNKNOWN_AREA;
                     if (!areaOptions.some(area => area.id === selectedAreaId)) setSelectedAreaId(firstAreaWithMemory.id);
                 }, [drawerOpen, selectedAreaId, areaCounts]);
-
+                
                 useEffect(() => {
                     setActiveMemoryIndex(0);
                 }, [viewScope, selectedAreaId, scopedMemories.length]);
-
+                
                 const toggleAI = (id) => {
                     if (selectedAIs.includes(id)) setSelectedAIs(selectedAIs.filter(x => x !== id));
                     else if (selectedAIs.length < 3) setSelectedAIs([...selectedAIs, id]);
                 };
-
+                
                 const activeAreaChatMessages = useMemo(() => {
                     return chatMessages
                         .filter(message => message.areaId === selectedAreaId)
                         .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
                 }, [chatMessages, selectedAreaId]);
-
+                
                 useEffect(() => {
                     localStorage.setItem(AI_CHAT_STORAGE_KEY, JSON.stringify(chatMessages));
                 }, [chatMessages]);
-
+                
                 useEffect(() => {
                     if (!drawerOpen || exploreMode !== 'companion' || viewScope !== 'area' || areaMemoriesForAi.length === 0 || selectedAIs.length === 0) {
                         setAiResponses([]);
@@ -1749,9 +1757,8 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         setAiError('');
                         return;
                     }
-
+                    
                     let cancelled = false;
-
                     setAiLoading(true);
                     setAiError('');
                     setAiResponses([]);
@@ -1772,7 +1779,6 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                     source: 'api'
                                 }))
                                 .filter(item => item.text);
-
                             if (filledResponses.length === 0) {
                                 setAiResponses([]);
                                 setAiError('未能生成地块解读，请稍后重试');
@@ -1788,17 +1794,40 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         .finally(() => {
                             if (!cancelled) setAiLoading(false);
                         });
-
-                    return () => {
-                        cancelled = true;
-                    };
+                    return () => { cancelled = true; };
                 }, [drawerOpen, exploreMode, viewScope, selectedAreaId, areaMemoriesForAi, selectedAIs]);
-
+                
+                // 滚动到底部的函数
+                const scrollToBottom = () => {
+                    if (chatMessagesContainerRef.current) {
+                        chatMessagesContainerRef.current.scrollTop = chatMessagesContainerRef.current.scrollHeight;
+                    }
+                };
+                
+                // 清除对话历史
+                const clearChatHistory = () => {
+                    if (chatMessages.length === 0) return;
+                    const confirmClear = window.confirm(`确定要清除所有角色的全部对话历史吗？共 ${chatMessages.length} 条消息。`);
+                    if (!confirmClear) return;
+                    
+                    setChatMessages([]);  // 直接清空全部
+                    setChatError('所有对话历史已清除');
+                    setTimeout(() => setChatError(''), 2000);
+                    };
+                
+                // 自动滚动：当最后一条消息属于当前区域和角色时
+                useEffect(() => {
+                    const lastMsg = chatMessages[chatMessages.length - 1];
+                    if (lastMsg && lastMsg.areaId === selectedAreaId && lastMsg.roleId === chatRoleId) {
+                        scrollToBottom();
+                    }
+                }, [chatMessages, selectedAreaId, chatRoleId]);
+                
                 const sendChatMessage = async (e) => {
                     e.preventDefault();
                     const text = chatInput.trim();
                     if (!text || chatLoading) return;
-
+                    
                     const userMessage = normalizeChatMessage({
                         areaId: selectedAreaId,
                         roleId: chatRoleId,
@@ -1810,12 +1839,12 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         .filter(message => message.areaId === selectedAreaId && message.roleId === chatRoleId)
                         .slice(-8)
                         .map(message => ({ sender: message.sender, text: message.text, roleId: message.roleId }));
-
+                    
                     setChatMessages(nextMessages);
                     setChatInput('');
                     setChatLoading(true);
                     setChatError('');
-
+                    
                     try {
                         const data = await requestRoleChat({
                             roleId: chatRoleId,
@@ -1839,12 +1868,12 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         setChatLoading(false);
                     }
                 };
-
+                
                 const cycleMemory = (direction) => {
                     if (scopedMemories.length === 0) return;
                     setActiveMemoryIndex(index => (index + direction + scopedMemories.length) % scopedMemories.length);
                 };
-
+                
                 const renderCarouselImage = (mem, isPreview = false) => {
                     const isFuture = (mem.seedType || mem.type) === 'future';
                     const isSprouted = isFutureSeedSprouted(mem);
@@ -1857,7 +1886,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         </div>
                     );
                 };
-
+                
                 const renderCarouselBody = (mem) => {
                     const isFuture = (mem.seedType || mem.type) === 'future';
                     if (isFuture && !isFutureSeedSprouted(mem)) {
@@ -1865,7 +1894,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                     }
                     return <p className={`text-sm md:text-base leading-relaxed ${drawerTextClass}`}>{mem.text || mem.content || '这条记忆只有图像或标签。'}</p>;
                 };
-
+                
                 const renderMemoryCard = (mem) => {
                     const isFuture = (mem.seedType || mem.type) === 'future';
                     const isSprouted = isFutureSeedSprouted(mem);
@@ -1897,7 +1926,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                         </article>
                     );
                 };
-
+                
                 return (
                     <>
                         <style>{`
@@ -1936,7 +1965,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                     <XIcon className="w-6 h-6" />
                                 </button>
                             </div>
-
+                            
                             <div className={`grid grid-cols-1 lg:grid-cols-[260px_minmax(360px,1fr)_280px] gap-5 flex-1 min-h-0 overflow-y-auto lg:overflow-hidden content-stagger ${drawerOpen ? 'opacity-100 translate-x-0 delay-200' : 'opacity-0 translate-x-12'}`}>
                                 <aside className="lg:min-h-0 lg:overflow-y-auto rounded-2xl border border-white/10 bg-black/10 p-4">
                                     <div className="grid grid-cols-2 gap-2 mb-4">
@@ -1944,7 +1973,6 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                         <button onClick={() => setViewScope('area')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${viewScope === 'area' ? 'bg-white/20 border-white/40 ' + drawerTextClass : 'bg-black/10 border-white/10 ' + drawerSubTextClass}`}>局部</button>
                                     </div>
                                     
-                                    {/* 自定义下拉选择器 - 区域选择 */}
                                     <div className="relative" ref={areaDropdownRef}>
                                         <button
                                             type="button"
@@ -1962,7 +1990,6 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                         
                                         {isAreaDropdownOpen && (
                                             <div className="absolute left-0 right-0 mt-2 z-50 bg-[rgba(90,90,82,0.85)] border border-[rgba(169,169,159,0.5)] rounded-xl shadow-[0_0_8px_rgba(169,169,159,0.25)] backdrop-blur-sm overflow-hidden dropdown-slide">
-                                                {/* 移除滚动条，所有选项一次显示 */}
                                                 <div>
                                                     {areaOptions.map(area => (
                                                         <button
@@ -1982,14 +2009,14 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                             </div>
                                         )}
                                     </div>
-
+                                    
                                     {viewScope === 'area' && (
                                         <div className="grid grid-cols-2 gap-2 my-4">
                                             <button onClick={() => setExploreMode('private')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${exploreMode === 'private' ? 'bg-white/20 border-white/40 ' + drawerTextClass : 'bg-black/10 border-white/10 ' + drawerSubTextClass}`}>秘密探索</button>
                                             <button onClick={() => setExploreMode('companion')} className={`py-2 rounded-full text-sm border transition-colors cursor-pointer ${exploreMode === 'companion' ? 'bg-white/20 border-white/40 ' + drawerTextClass : 'bg-black/10 border-white/10 ' + drawerSubTextClass}`}>结伴探索</button>
                                         </div>
                                     )}
-
+                                    
                                     <div className="grid grid-cols-2 gap-2 mb-4">
                                         <div className="rounded-2xl bg-white/5 border border-white/10 p-3">
                                             <p className={`text-[10px] ${drawerSubTextClass}`}>记录</p>
@@ -2000,7 +2027,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                             <p className={`text-xl font-light ${drawerTextClass}`}>{stats.future}</p>
                                         </div>
                                     </div>
-
+                                    
                                     {viewScope === 'area' && exploreMode === 'companion' && (
                                         <div>
                                             <p className={`text-sm mb-3 ${drawerSubTextClass}`}>结伴探索 (最多选 3 位)</p>
@@ -2033,7 +2060,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                         </div>
                                     )}
                                 </aside>
-
+                                
                                 <main className="min-h-[360px] lg:min-h-0 overflow-hidden rounded-2xl border border-white/10 bg-black/10 p-4 md:p-5 flex flex-col">
                                     <div className="mb-4 flex items-center justify-between gap-3">
                                         <div>
@@ -2054,7 +2081,6 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                                     <button type="button" onClick={() => cycleMemory(-1)} className="absolute left-0 md:left-3 z-20 w-11 h-11 rounded-full border border-white/20 bg-black/25 text-white/80 hover:bg-white/15 hover:text-white transition-colors flex items-center justify-center cursor-pointer" title="上一条">
                                                         <ChevronLeftIcon className="w-5 h-5" />
                                                     </button>
-
                                                     <div className="relative w-full max-w-[520px] h-[420px]">
                                                         {stackedMemories.map((mem, layer) => {
                                                             const side = layer % 2 === 0 ? -1 : 1;
@@ -2075,7 +2101,6 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                                                 </div>
                                                             );
                                                         })}
-
                                                         <article className="absolute inset-0 z-10 rounded-[28px] overflow-hidden border border-white/25 bg-black/35 backdrop-blur-xl shadow-[0_24px_80px_rgba(0,0,0,0.42)]">
                                                             <div className="h-[46%] border-b border-white/10 bg-black/20 overflow-hidden">{renderCarouselImage(activeMemory)}</div>
                                                             <div className="h-[54%] p-5 md:p-6 flex flex-col">
@@ -2091,23 +2116,19 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                                                         {(activeMemory.seedType || activeMemory.type) === 'future' ? (isFutureSeedSprouted(activeMemory) ? '已萌发' : '未来') : '记忆'}
                                                                     </span>
                                                                 </div>
-
                                                                 {activeMemory.tags && activeMemory.tags.length > 0 && (
                                                                     <div className="flex flex-wrap gap-1.5 mb-3">
                                                                         {activeMemory.tags.map(t => <span key={t} className={`text-[10px] px-2 py-0.5 rounded border border-white/20 ${drawerSubTextClass}`}>{t}</span>)}
                                                                     </div>
                                                                 )}
-
                                                                 <div className="min-h-0 overflow-y-auto pr-1">{renderCarouselBody(activeMemory)}</div>
                                                             </div>
                                                         </article>
                                                     </div>
-
                                                     <button type="button" onClick={() => cycleMemory(1)} className="absolute right-0 md:right-3 z-20 w-11 h-11 rounded-full border border-white/20 bg-black/25 text-white/80 hover:bg-white/15 hover:text-white transition-colors flex items-center justify-center cursor-pointer" title="下一条">
                                                         <ChevronRightIcon className="w-5 h-5" />
                                                     </button>
                                                 </div>
-
                                                 {scopedMemories.length > 1 && (
                                                     <div className="mt-5 flex items-center justify-center gap-2">
                                                         {scopedMemories.map((mem, index) => (
@@ -2131,7 +2152,7 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                         </div>
                                     )}
                                 </main>
-
+                                
                                 <aside className="lg:min-h-0 lg:overflow-y-auto rounded-2xl border border-white/10 bg-black/10 p-4">
                                     {viewScope === 'global' ? (
                                         <div>
@@ -2206,10 +2227,23 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                                     </div>
                                                 )}
                                             </div>
-
+                                            
+                                            {/* 指定角色对话区域 - 已添加清除按钮和自动滚动 */}
                                             <div className="rounded-2xl border border-white/10 bg-black/15 p-3">
-                                                <p className={`text-xs mb-3 ${drawerSubTextClass}`}>指定角色对话</p>
-                                                <div className="max-h-44 overflow-y-auto space-y-2 pr-1 mb-3">
+                                                <div className="flex justify-between items-center mb-3">
+                                                    <p className={`text-xs ${drawerSubTextClass}`}>指定角色对话</p>
+                                                    <button
+                                                    onClick={clearChatHistory}
+                                                    className="text-xs px-2 py-1 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-white"
+                                                    title="清除当前角色的对话历史"
+                                                >
+                                                    清除历史
+                                                </button>
+                                                </div>
+                                                <div
+                                                    ref={chatMessagesContainerRef}
+                                                    className="max-h-44 overflow-y-auto space-y-2 pr-1 mb-3"
+                                                >
                                                     {activeAreaChatMessages.length === 0 ? (
                                                         <div className={`rounded-xl border border-dashed border-white/10 bg-white/5 p-3 text-xs leading-relaxed ${drawerSubTextClass}`}>
                                                             选择一个角色，问 TA 一个关于这片地块的问题。
@@ -2260,7 +2294,6 @@ import { CAMPUS_AREAS, DATE_MAX, DATE_MIN, MAP_HEIGHT, MAP_WIDTH, MAX_IMAGE_BYTE
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                                                             </svg>
                                                         </button>
-
                                                         {isChatRoleDropdownOpen && (
                                                             <div className="absolute left-0 right-0 bottom-full mb-2 z-50 bg-[rgba(90,90,82,0.85)] border border-[rgba(169,169,159,0.5)] rounded-xl shadow-[0_0_8px_rgba(169,169,159,0.25)] backdrop-blur-sm overflow-hidden dropdown-slide">
                                                                 {AI_COMPANIONS.map(ai => {
